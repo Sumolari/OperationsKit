@@ -1,0 +1,5 @@
+Tests/Pods
+Tests/Tests.xcworkspace
+Tests/Tests.xcodeproj/xcuserdata
+Tests/Tests.xcodeproj/project.xcworkspace/xcuserdata
+Podfile.lock

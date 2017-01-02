@@ -1,0 +1,382 @@
+//
+//  PromisedOperationTest.swift
+//  Tests
+//
+//  Created by Lluís Ulzurrun de Asanza Sàez on 10/12/16.
+//
+//
+
+import XCTest
+import OperationsKit
+import PromiseKit
+import Nimble
+
+class PromisedOperationTest: XCTestCase {
+    
+    /// Well known errors that can be produced in these tests.
+    enum TestError: Error {
+        /// Expected error.
+        case expected
+    }
+    
+    /// Small delay to wait to let operation queue start operations.
+    static let startThreshold: UInt32 = 1
+    
+    override func setUp() {
+        super.setUp()
+        // Put setup code here.
+        // This method is called before the invocation of each test method in 
+        // the class.
+    }
+    
+    override func tearDown() {
+        // Put teardown code here. 
+        // This method is called after the invocation of each test method in the 
+        // class.
+        super.tearDown()
+    }
+    
+    /**
+     Returns a block for an asynchronous operation that will sleep some seconds.
+     
+     - parameter seconds: Seconds the block should sleep.
+     
+     - returns: Promise wrapping the asynchronous operation.
+     */
+    fileprivate func block(toSleep seconds: UInt32) -> (Void) -> Promise<Void> {
+        
+        return {
+            return Promise<Void>() { fulfill, _ in
+                print("Operation started, sleeping for \(seconds) seconds")
+                sleep(seconds)
+                print("Operation woke up!")
+                fulfill()
+            }
+        }
+        
+    }
+    
+    /**
+     Returns a block for an asynchronous operation that will sleep some seconds
+     and track its progress.
+     
+     - parameter seconds: Seconds the block should sleep each time.
+     - parameter times: Times that the block should sleep.
+     
+     - returns: Progress and promise wrapping the asynchronous operation.
+     */
+    fileprivate func block(
+        toSleep seconds: UInt32,
+        times: Int64
+    ) -> (Void) -> ProgressAndPromise<Void> {
+        
+        return {
+        
+            let progress = Progress(totalUnitCount: times)
+            
+            let promise = Promise<Void>() { fulfill, _ in
+                print("Operation started, sleeping for \(seconds) seconds \(times) times")
+                for i in 0..<times {
+                    sleep(seconds)
+                    progress.completedUnitCount = i + 1
+                    print("Operation woke up! \(times - i - 1) times remaining...")
+                }
+                fulfill()
+            }
+            
+            return ProgressAndPromise(progress: progress, promise: promise)
+            
+        }
+        
+    }
+    
+    /**
+     Returns a block for an asynchronous operation that will sleep some seconds.
+     
+     - parameter seconds: Seconds the block should sleep.
+     
+     - returns: Promise wrapping the asynchronous operation.
+     */
+    fileprivate func block(
+        toFailAfterSleeping seconds: UInt32
+    ) -> (Void) -> Promise<Void> {
+        
+        return {
+            return Promise<Void>() { _, reject in
+                print("Operation started, sleeping for \(seconds) seconds")
+                sleep(seconds)
+                print("Operation woke up!")
+                reject(TestError.expected)
+            }
+        }
+        
+    }
+    
+    /// Tests that the operation is asynchronous.
+    func testOperationIsAsynchronous() {
+        
+        let timeToSleep: UInt32 = 2
+        
+        let op = AsynchronousOperation(block: self.block(toSleep: timeToSleep))
+        
+        expect(op.isExecuting).to(beFalse())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beFalse())
+        
+        let queue = OperationQueue()
+        queue.qualityOfService = .background
+        queue.addOperation(op)
+        
+        sleep(type(of:self).startThreshold) // To let queue to start operation
+        
+        expect(op.isExecuting).to(beTrue())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beFalse())
+        
+        expect(op.isConcurrent).to(beTrue())
+        expect(op.isAsynchronous).to(beTrue())
+        
+        expect(op.promise.isResolved).to(beFalse())
+        expect(op.promise.isFulfilled).to(beFalse())
+        expect(op.promise.isRejected).to(beFalse())
+        
+        expect(op.promise.isResolved).toEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.promise.isFulfilled).toEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.promise.isRejected).toNotEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.isExecuting).to(beFalse())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beTrue())
+        
+    }
+    
+    /// Tests that the operation properly succeeds.
+    func testOperationSucceeds() {
+        
+        let timeToSleep: UInt32 = 2
+        
+        let op = AsynchronousOperation(block: self.block(toSleep: timeToSleep))
+        
+        var finished: Bool = false
+        _ = op.promise.then { _ in finished = true }
+        
+        expect(op.isExecuting).to(beFalse())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beFalse())
+        
+        let queue = OperationQueue()
+        queue.qualityOfService = .background
+        queue.addOperation(op)
+        
+        sleep(type(of:self).startThreshold) // To let queue to start operation
+        
+        expect(op.isExecuting).to(beTrue())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beFalse())
+        
+        expect(op.promise.isResolved).to(beFalse())
+        expect(op.promise.isFulfilled).to(beFalse())
+        expect(op.promise.isRejected).to(beFalse())
+        
+        expect(op.promise.isResolved).toEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.promise.isFulfilled).toEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.promise.isRejected).toNotEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(finished).toEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.isExecuting).to(beFalse())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beTrue())
+        
+    }
+    
+    /// Tests that the operation properly fails.
+    func testOperationFails() {
+        
+        let timeToSleep: UInt32 = 2
+        
+        let op = AsynchronousOperation(
+            block: self.block(toFailAfterSleeping: timeToSleep)
+        )
+        
+        expect(op.isExecuting).to(beFalse())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beFalse())
+        
+        var finished: Bool = false
+        op.promise.catch { _ in finished = true }
+        
+        let queue = OperationQueue()
+        queue.qualityOfService = .background
+        queue.addOperation(op)
+        
+        sleep(type(of:self).startThreshold) // To let queue to start operation
+        
+        expect(op.isExecuting).to(beTrue())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beFalse())
+        
+        expect(op.promise.isResolved).to(beFalse())
+        expect(op.promise.isFulfilled).to(beFalse())
+        expect(op.promise.isRejected).to(beFalse())
+        
+        expect(op.promise.isResolved).toEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.promise.isFulfilled).toNotEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.promise.isRejected).toEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(finished).toEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.isExecuting).to(beFalse())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beTrue())
+        
+    }
+    
+    /// Tests that the operation is cancellable.
+    func testOperationIsCancellable() {
+        
+        let timeToSleep: UInt32 = 2
+        
+        let op = AsynchronousOperation(block: self.block(toSleep: timeToSleep))
+        
+        expect(op.isExecuting).to(beFalse())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beFalse())
+        
+        let queue = OperationQueue()
+        queue.qualityOfService = .background
+        queue.addOperation(op)
+        
+        sleep(type(of:self).startThreshold) // To let queue to start operation
+        
+        expect(op.promise.isResolved).to(beFalse())
+        expect(op.promise.isFulfilled).to(beFalse())
+        expect(op.promise.isRejected).to(beFalse())
+        
+        expect(op.isExecuting).to(beTrue())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beFalse())
+        
+        op.cancel()
+        
+        expect(op.isCancelled).to(beTrue())
+        expect(op.isExecuting).to(beFalse())
+        expect(op.isFinished).to(beTrue())
+        
+        expect(op.promise.isRejected).to(beTrue())
+        
+        expect(op.promise.isResolved).toEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.promise.isFulfilled).toNotEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+    }
+
+    /// Tests that the operation properly reports its progress.
+    func testOperationTracksProgress() {
+        
+        let timeToSleep: UInt32 = 2
+        let timesToSleep: Int64 = 5
+        
+        let op = AsynchronousOperation(
+            block: self.block(
+                toSleep: timeToSleep,
+                times: timesToSleep
+            )
+        )
+        
+        expect(op.progress).toNot(beNil())
+        
+        expect(op.isExecuting).to(beFalse())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beFalse())
+        
+        let queue = OperationQueue()
+        queue.qualityOfService = .background
+        queue.addOperation(op)
+        
+        sleep(type(of:self).startThreshold) // To let queue to start operation
+        
+        expect(op.progress).toNot(beNil())
+        
+        expect(op.progress!.fractionCompleted).toNot(beCloseTo(1.0))
+        
+        expect(op.isExecuting).to(beTrue())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beFalse())
+        
+        expect(op.isConcurrent).to(beTrue())
+        expect(op.isAsynchronous).to(beTrue())
+        
+        expect(op.promise.isResolved).to(beFalse())
+        expect(op.promise.isFulfilled).to(beFalse())
+        expect(op.promise.isRejected).to(beFalse())
+        
+        expect(op.promise.isResolved).toEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.promise.isFulfilled).toEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.promise.isRejected).toNotEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.progress!.fractionCompleted).to(beCloseTo(1.0))
+        
+        expect(op.isExecuting).to(beFalse())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beTrue())
+        
+    }
+    
+}

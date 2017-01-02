@@ -1,0 +1,13 @@
+source 'https://github.com/CocoaPods/Specs.git'
+
+use_frameworks!
+
+target 'macOS Tests' do
+	pod 'OperationsKit', :path => '../'
+	pod 'Nimble'
+end
+
+target 'iOS Tests' do
+	pod 'OperationsKit', :path => '../'
+	pod 'Nimble'
+end
