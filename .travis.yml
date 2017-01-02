@@ -32,6 +32,8 @@ script:
   - cd Tests
   - pod install
 
+  - xcodebuild -workspace "$WORKSPACE" -list
+
   # Build Framework in Debug and Run Tests
   - xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -sdk "$SDK" -destination "$DESTINATION" -configuration Debug ONLY_ACTIVE_ARCH=NO test | xcpretty -c;
 
