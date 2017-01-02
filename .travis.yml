@@ -15,9 +15,9 @@ env:
   - OSX_SCHEME="macOS Tests"
   - OSX_SDK=macosx10.12
   matrix:
-    - DESTINATION="OS=10.1,name=iPhone 5S"     SCHEME="$IOS_SCHEME"    SDK="$IOS_SDK"    POD_LINT="NO"
-    - DESTINATION="OS=10.2,name=iPhone 5S"     SCHEME="$IOS_SCHEME"    SDK="$IOS_SDK"    POD_LINT="NO"
-    - DESTINATION="arch=x86_64"                SCHEME="$OSX_SCHEME"    SDK="$OSX_SDK"    POD_LINT="YES"
+    - DESTINATION="OS=10.1,name=iPad Air 2"     SCHEME="$IOS_SCHEME"    SDK="$IOS_SDK"    POD_LINT="NO"
+    - DESTINATION="OS=10.2,name=iPad Air 2"     SCHEME="$IOS_SCHEME"    SDK="$IOS_SDK"    POD_LINT="NO"
+    - DESTINATION="arch=x86_64"                 SCHEME="$OSX_SCHEME"    SDK="$OSX_SDK"    POD_LINT="YES"
 
 script:
   - set -o pipefail
@@ -34,6 +34,7 @@ script:
 
   # Run `pod lib lint` if specified
   - if [ $POD_LINT == "YES" ]; then
+      cd ../
       pod lib lint --private --verbose;
     fi
 
