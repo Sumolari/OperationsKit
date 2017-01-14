@@ -35,17 +35,14 @@ open class AsynchronousOperation<ReturnType>: Operation {
     open internal(set) var progress: Progress? = nil
     
     /// Promise wrapping underlying promise returned by block.
-    open internal(set) var promise: Promise<ReturnType>! = nil
+    open fileprivate(set) var promise: Promise<ReturnType>! = nil
     
     /// Block to `fulfill` public promise.
-    internal var fulfillPromise: ((ReturnType) -> Void)! = nil
+    public fileprivate(set) var fulfillPromise: ((ReturnType) -> Void)! = nil
     
     /// Block to `reject` public promise, used when cancelling the operation or
     /// forwarding underlying promise errors.
-    internal var rejectPromise: ((Error) -> Void)! = nil
-    
-    /// Block that will be run when this operation is started.
-    internal var block: ((Void) -> Promise<ReturnType>)! = nil
+    public fileprivate(set) var rejectPromise: ((Error) -> Void)! = nil
     
     /// Lock used to prevent race conditions when changing internal state
     /// (`isExecuting`, `isFinished`).
@@ -101,30 +98,9 @@ open class AsynchronousOperation<ReturnType>: Operation {
         }
     }
     
-    public init(block: @escaping (Void) -> ProgressAndPromise<ReturnType>) {
+    public override init() {
         super.init()
-        let progress = Progress(totalUnitCount: 1)
-        self.progress = progress
-        self.block = {
-            let progressAndPromise = block()
-            progress.totalUnitCount = progressAndPromise.progress.totalUnitCount
-            
-            progressAndPromise.progress.reactive
-                .values(forKeyPath: "completedUnitCount")
-                .start { event in
-                    
-                    switch event {
-                    case .completed, .failed(_), .interrupted:
-                        progress.completedUnitCount = progress.totalUnitCount
-                    case .value(let optionalValue):
-                        guard let value = optionalValue as? Int64 else { return }
-                        progress.completedUnitCount = value
-                    }
-                    
-                }
-            
-            return progressAndPromise.promise
-        }
+        self.progress = Progress(totalUnitCount: 1)
         self.promise = Promise<ReturnType>() {
             [unowned self] fullfill, reject in
             self.fulfillPromise = fullfill
@@ -132,12 +108,8 @@ open class AsynchronousOperation<ReturnType>: Operation {
         }
     }
     
-    public init(
-        progress: Progress? = nil,
-        block: @escaping (Void) -> Promise<ReturnType>
-    ) {
+    public init(progress: Progress? = nil) {
         super.init()
-        self.block = block
         self.progress = progress
         self.promise = Promise<ReturnType>() {
             [unowned self] fullfill, reject in
@@ -148,11 +120,6 @@ open class AsynchronousOperation<ReturnType>: Operation {
     
     open override func main() {
         self.isExecuting = true
-        self.block()
-            .always { self.finish() }
-            .then { result -> Void in self.fulfillPromise(result) }
-            .then { self.completionBlock?() }
-            .catch { error in self.rejectPromise(error) }
     }
     
     open override func cancel() {
@@ -163,7 +130,7 @@ open class AsynchronousOperation<ReturnType>: Operation {
     
     /// Changes internal state to reflect that this operation has either 
     /// finished or been cancelled.
-    fileprivate func finish() {
+    public func finish() {
         self.isExecuting = false
         self.isFinished = true
     }

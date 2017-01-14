@@ -10,6 +10,15 @@ import Foundation
 import PromiseKit
 
 /**
+ Common errors to be throw by any kind of retryable asynchronous operation.
+ 
+ - reachedRetryLimit: The operation reached its maximum retry limit.
+ */
+public enum RetryableOperationCommonError: Error {
+    case reachedRetryLimit
+}
+
+/**
  A `RetryableAsynchronousOperation` is a subclass of `AsynchronousOperation` 
  that will retry an operation until it succeeds or a limit is reached.
  */
@@ -21,35 +30,23 @@ open class RetryableAsynchronousOperation<ReturnType>: AsynchronousOperation<Ret
     /// Current amount of times the operation has been repeated.
     open private(set) var attempts: UInt64 = 0
     
-    public init(
-        maximumAttempts: UInt64 = 1,
-        block: @escaping (Void) -> ProgressAndPromise<ReturnType>
-    ) {
+    public init(maximumAttempts: UInt64 = 1) {
         self.maximumAttempts = maximumAttempts
-        super.init(block: block)
-    }
-    
-    public init(
-        maximumAttempts: UInt64 = 1,
-        progress: Progress? = nil,
-        block: @escaping (Void) -> Promise<ReturnType>
-    ) {
-        self.maximumAttempts = maximumAttempts
-        super.init(progress: progress, block: block)
+        super.init()
     }
     
     open override func main() {
         
-        self.block()
-            .then { result -> Void in self.fulfillPromise(result) }
-            .then { self.completionBlock?() }
-            .catch { error in
-                guard self.attempts < self.maximumAttempts else {
-                    return self.rejectPromise(error)
-                }
-                self.attempts += 1
-                self.main()
-            }
+        super.main()
+        
+        guard self.attempts <= self.maximumAttempts else {
+            self.finish()
+            return self.rejectPromise(
+                RetryableOperationCommonError.reachedRetryLimit
+            )
+        }
+        
+        self.attempts += 1
         
     }
     

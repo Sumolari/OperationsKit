@@ -1,5 +1,5 @@
 //
-//  PromisedOperationTest.swift
+//  BlockBasedAsynchronousOperationTest.swift
 //  Tests
 //
 //  Created by Lluís Ulzurrun de Asanza Sàez on 10/12/16.
@@ -11,7 +11,7 @@ import OperationsKit
 import PromiseKit
 import Nimble
 
-class PromisedOperationTest: XCTestCase {
+class BlockBasedAsynchronousOperationTest: XCTestCase {
     
     /// Well known errors that can be produced in these tests.
     enum TestError: Error {
@@ -117,7 +117,9 @@ class PromisedOperationTest: XCTestCase {
         
         let timeToSleep: UInt32 = 2
         
-        let op = AsynchronousOperation(block: self.block(toSleep: timeToSleep))
+        let op = BlockBasedAsynchronousOperation(
+            block: self.block(toSleep: timeToSleep)
+        )
         
         expect(op.isExecuting).to(beFalse())
         expect(op.isCancelled).to(beFalse())
@@ -166,7 +168,9 @@ class PromisedOperationTest: XCTestCase {
         
         let timeToSleep: UInt32 = 2
         
-        let op = AsynchronousOperation(block: self.block(toSleep: timeToSleep))
+        let op = BlockBasedAsynchronousOperation(
+            block: self.block(toSleep: timeToSleep)
+        )
         
         var finished: Bool = false
         _ = op.promise.then { _ in finished = true }
@@ -220,7 +224,7 @@ class PromisedOperationTest: XCTestCase {
         
         let timeToSleep: UInt32 = 2
         
-        let op = AsynchronousOperation(
+        let op = BlockBasedAsynchronousOperation(
             block: self.block(toFailAfterSleeping: timeToSleep)
         )
         
@@ -276,7 +280,9 @@ class PromisedOperationTest: XCTestCase {
         
         let timeToSleep: UInt32 = 2
         
-        let op = AsynchronousOperation(block: self.block(toSleep: timeToSleep))
+        let op = BlockBasedAsynchronousOperation(
+            block: self.block(toSleep: timeToSleep)
+        )
         
         expect(op.isExecuting).to(beFalse())
         expect(op.isCancelled).to(beFalse())
@@ -322,7 +328,7 @@ class PromisedOperationTest: XCTestCase {
         let timeToSleep: UInt32 = 2
         let timesToSleep: Int64 = 5
         
-        let op = AsynchronousOperation(
+        let op = BlockBasedAsynchronousOperation(
             block: self.block(
                 toSleep: timeToSleep,
                 times: timesToSleep

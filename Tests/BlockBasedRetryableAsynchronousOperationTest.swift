@@ -1,5 +1,5 @@
 //
-//  RetryableAsynchronousOperationTest.swift
+//  BlockBasedRetryableAsynchronousOperationTest.swift
 //  Tests
 //
 //  Created by Lluís Ulzurrun de Asanza Sàez on 11/12/16.
@@ -11,7 +11,7 @@ import OperationsKit
 import PromiseKit
 import Nimble
 
-class RetryableAsynchronousOperationTest: XCTestCase {
+class BlockBasedRetryableAsynchronousOperationTest: XCTestCase {
     
     /// Well known errors that can be produced in these tests.
     enum TestError: Error {
@@ -91,7 +91,7 @@ class RetryableAsynchronousOperationTest: XCTestCase {
         
         let retriesRequired: UInt64 = 3
         
-        let op = RetryableAsynchronousOperation(
+        let op = BlockBasedRetryableAsynchronousOperation(
             maximumAttempts: retriesRequired,
             block: self.block(toRetry: retriesRequired)
         )
@@ -120,7 +120,7 @@ class RetryableAsynchronousOperationTest: XCTestCase {
         
         let retriesRequired: UInt64 = 3
         
-        let op = RetryableAsynchronousOperation(
+        let op = BlockBasedRetryableAsynchronousOperation(
             maximumAttempts: retriesRequired - 1,
             block: self.block(toRetry: retriesRequired)
         )
@@ -148,7 +148,7 @@ class RetryableAsynchronousOperationTest: XCTestCase {
         
         let retriesRequired: UInt64 = 3
         
-        let op = RetryableAsynchronousOperation(
+        let op = BlockBasedRetryableAsynchronousOperation(
             maximumAttempts: retriesRequired,
             block: self.blockWithProgress(toRetry: retriesRequired)
         )
