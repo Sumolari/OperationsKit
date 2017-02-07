@@ -128,8 +128,8 @@ open class AsynchronousOperation<ReturnType>: Operation {
     }
     
     /// Changes internal state to reflect that this operation has either 
-    /// finished or been cancelled.
-    fileprivate func markAsFinished() {
+    /// finished or been cancelled but does not resolve underlying promise.
+    public func markAsFinished() {
         self.isExecuting = false
         self.isFinished = true
     }
