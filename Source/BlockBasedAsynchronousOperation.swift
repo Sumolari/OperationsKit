@@ -67,10 +67,9 @@ open class BlockBasedAsynchronousOperation<ReturnType>: AsynchronousOperation<Re
     open override func main() {
         super.main()
         self.block()
-            .always { self.finish() }
-            .then { result -> Void in self.fulfillPromise(result) }
+            .then { result -> Void in self.finish(result) }
             .then { self.completionBlock?() }
-            .catch { error in self.rejectPromise(error) }
+            .catch { error in self.finish(error: error) }
     }
     
 }

@@ -40,9 +40,8 @@ open class RetryableAsynchronousOperation<ReturnType>: AsynchronousOperation<Ret
         super.main()
         
         guard self.attempts <= self.maximumAttempts else {
-            self.finish()
-            return self.rejectPromise(
-                RetryableOperationCommonError.reachedRetryLimit
+            return self.finish(
+                error: RetryableOperationCommonError.reachedRetryLimit
             )
         }
         

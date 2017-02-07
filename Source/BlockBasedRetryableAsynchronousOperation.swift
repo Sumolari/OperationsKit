@@ -66,11 +66,7 @@ open class BlockBasedRetryableAsynchronousOperation<ReturnType>: RetryableAsynch
         super.main()
         
         self.block()
-            .then { result -> ReturnType in
-                self.finish()
-                return result
-            }
-            .then { result -> Void in self.fulfillPromise(result) }
+            .then { result -> Void in self.finish(result) }
             .then { self.completionBlock?() }
             .catch { _ in self.main() }
         

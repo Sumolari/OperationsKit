@@ -38,11 +38,11 @@ open class AsynchronousOperation<ReturnType>: Operation {
     open fileprivate(set) var promise: Promise<ReturnType>! = nil
     
     /// Block to `fulfill` public promise.
-    public fileprivate(set) var fulfillPromise: ((ReturnType) -> Void)! = nil
+    fileprivate var fulfillPromise: ((ReturnType) -> Void)! = nil
     
     /// Block to `reject` public promise, used when cancelling the operation or
     /// forwarding underlying promise errors.
-    public fileprivate(set) var rejectPromise: ((Error) -> Void)! = nil
+    fileprivate var rejectPromise: ((Error) -> Void)! = nil
     
     /// Lock used to prevent race conditions when changing internal state
     /// (`isExecuting`, `isFinished`).
@@ -124,15 +124,41 @@ open class AsynchronousOperation<ReturnType>: Operation {
     
     open override func cancel() {
         super.cancel()
-        self.finish()
-        self.rejectPromise(AsynchronousOperationCommonError.cancelled)
+        self.finish(error: AsynchronousOperationCommonError.cancelled)
     }
     
     /// Changes internal state to reflect that this operation has either 
     /// finished or been cancelled.
-    public func finish() {
+    fileprivate func markAsFinished() {
         self.isExecuting = false
         self.isFinished = true
+    }
+    
+    /**
+     You should call this method when your operation successfully finishes.
+     
+     - note: Changes internal state to reflect that his operation has been 
+     finished and fulfills underlying promise, returning given value back to 
+     chained ones.
+     
+     - parameter returnValue: Value to be used to fulfill promise.
+     */
+    public func finish(_ returnValue: ReturnType) {
+        self.markAsFinished()
+        self.fulfillPromise(returnValue)
+    }
+    
+    /**
+     You should call this method when your operation finishes with an error.
+     
+     - note: Changes internal state to reflect that his operation has failed and
+     rejects underlying promise, throwing given error back to chained promises.
+     
+     - parameter error: Error to be thrown back.
+     */
+    public func finish(error: Error) {
+        self.markAsFinished()
+        self.rejectPromise(error)
     }
     
     open override var isConcurrent: Bool {
