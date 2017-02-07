@@ -25,6 +25,7 @@ script:
   - xcodebuild -showsdks
 
   - cd Tests
+  - pod repo update
   - pod install
 
   - xcodebuild -workspace "$WORKSPACE" -list
