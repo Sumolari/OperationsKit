@@ -35,6 +35,6 @@ Pod::Spec.new do |s|
   s.source_files  = "Source", "Source/**/*.{h,m,swift}"
 
   s.dependency "PromiseKit", "~> 4.1"
-  s.dependency "ReactiveCocoa", "~> 5.0.0-alpha.3"
+  s.dependency "ReactiveCocoa", "~> 5.0"
 
 end
