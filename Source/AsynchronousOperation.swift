@@ -48,6 +48,18 @@ open class AsynchronousOperation<ReturnType>: Operation {
     /// (`isExecuting`, `isFinished`).
     fileprivate let stateLock = NSLock()
     
+    /// Date when this operation started.
+    open fileprivate(set) var startDate: Date? = nil
+    
+    /// Date when this operation ended.
+    open fileprivate(set) var endDate: Date? = nil
+    
+    /// Time interval ellapsed to complete this operation.
+    open var executionDuration: TimeInterval? {
+        guard let start = self.startDate else { return nil }
+        return self.endDate?.timeIntervalSince(start)
+    }
+    
     /**
      Internal attribute used to store whether this operation is executing or 
      not.
@@ -64,9 +76,19 @@ open class AsynchronousOperation<ReturnType>: Operation {
             willChangeValue(forKey: "isExecuting")
             
             self.stateLock.withCriticalScope {
+                
                 if self._executing != newValue {
+                    
                     self._executing = newValue
+                    
+                    if newValue {
+                        self.startDate = Date()
+                    } else {
+                        self.endDate = Date()
+                    }
+                    
                 }
+                
             }
             
             didChangeValue(forKey: "isExecuting")
