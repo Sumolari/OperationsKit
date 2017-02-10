@@ -13,10 +13,20 @@ import Nimble
 
 class BlockBasedAsynchronousOperationTest: XCTestCase {
     
-    /// Well known errors that can be produced in these tests.
-    enum TestError: Error {
-        /// Expected error.
+    /**
+     Well known errors that can be produced in these tests.
+     
+     - expected: Expected error.
+     */
+    enum TestError: OperationError {
+        
+        public static var Cancelled: TestError { return .cancelled }
+        public static var Unknown: TestError { return .unknown }
+        
+        case cancelled
+        case unknown
         case expected
+        
     }
     
     /// Small delay to wait to let operation queue start operations.
@@ -117,7 +127,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         
         let timeToSleep: UInt32 = 2
         
-        let op = BlockBasedAsynchronousOperation(
+        let op = BlockBasedAsynchronousOperation<Void, TestError>(
             block: self.block(toSleep: timeToSleep)
         )
         
@@ -168,7 +178,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         
         let timeToSleep: UInt32 = 2
         
-        let op = BlockBasedAsynchronousOperation(
+        let op = BlockBasedAsynchronousOperation<Void, TestError>(
             block: self.block(toSleep: timeToSleep)
         )
         
@@ -178,6 +188,9 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         expect(op.isExecuting).to(beFalse())
         expect(op.isCancelled).to(beFalse())
         expect(op.isFinished).to(beFalse())
+        expect(op.executionDuration).to(beNil())
+        
+        let enqueueDate = Date()
         
         let queue = OperationQueue()
         queue.qualityOfService = .background
@@ -217,6 +230,80 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         expect(op.isCancelled).to(beFalse())
         expect(op.isFinished).to(beTrue())
         
+        let ellapsedTime = Date().timeIntervalSince(enqueueDate)
+        
+        expect(op.executionDuration).toEventually(
+            beCloseTo(ellapsedTime, within: 0.5),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        
+        
+    }
+    
+    /// Tests that the operation properly succeeds.
+    func testCompletionBlockIsCalledOnce() {
+        
+        let timeToSleep: UInt32 = 2
+        
+        let op = BlockBasedAsynchronousOperation<Void, TestError>(
+            block: self.block(toSleep: timeToSleep)
+        )
+        
+        var counter = 0
+        op.completionBlock = { _ in counter += 1 }
+        
+        var finished: Bool = false
+        _ = op.promise.then { _ in finished = true }
+        
+        expect(op.isExecuting).to(beFalse())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beFalse())
+        
+        let queue = OperationQueue()
+        queue.qualityOfService = .background
+        queue.addOperation(op)
+        
+        expect(counter).to(equal(0))
+        
+        sleep(type(of:self).startThreshold) // To let queue to start operation
+        
+        expect(op.isExecuting).to(beTrue())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beFalse())
+        
+        expect(op.promise.isResolved).to(beFalse())
+        expect(op.promise.isFulfilled).to(beFalse())
+        expect(op.promise.isRejected).to(beFalse())
+        
+        expect(op.promise.isResolved).toEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.promise.isFulfilled).toEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.promise.isRejected).toNotEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(finished).toEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.isExecuting).to(beFalse())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beTrue())
+        
+        expect(counter).toEventually(equal(1))
+        expect(counter).toNotEventually(equal(2))
+        expect(counter).toNotEventually(equal(0))
+        
     }
     
     /// Tests that the operation properly fails.
@@ -224,7 +311,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         
         let timeToSleep: UInt32 = 2
         
-        let op = BlockBasedAsynchronousOperation(
+        let op = BlockBasedAsynchronousOperation<Void, TestError>(
             block: self.block(toFailAfterSleeping: timeToSleep)
         )
         
@@ -275,12 +362,77 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         
     }
     
+    /// Tests that the operation runs completion block on fail.
+    func testCompletionBlockIsCalledOnFail() {
+        
+        let timeToSleep: UInt32 = 2
+        
+        let op = BlockBasedAsynchronousOperation<Void, TestError>(
+            block: self.block(toFailAfterSleeping: timeToSleep)
+        )
+        
+        var counter = 0
+        op.completionBlock = { _ in counter += 1 }
+        
+        expect(op.isExecuting).to(beFalse())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beFalse())
+        
+        var finished: Bool = false
+        op.promise.catch { _ in finished = true }
+        
+        let queue = OperationQueue()
+        queue.qualityOfService = .background
+        queue.addOperation(op)
+        
+        expect(counter).to(equal(0))
+        
+        sleep(type(of:self).startThreshold) // To let queue to start operation
+        
+        expect(op.isExecuting).to(beTrue())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beFalse())
+        
+        expect(op.promise.isResolved).to(beFalse())
+        expect(op.promise.isFulfilled).to(beFalse())
+        expect(op.promise.isRejected).to(beFalse())
+        
+        expect(op.promise.isResolved).toEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.promise.isFulfilled).toNotEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.promise.isRejected).toEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(finished).toEventually(
+            beTrue(),
+            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+        )
+        
+        expect(op.isExecuting).to(beFalse())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beTrue())
+        
+        expect(counter).toEventually(equal(1))
+        expect(counter).toNotEventually(equal(2))
+        expect(counter).toNotEventually(equal(0))
+        
+    }
+    
     /// Tests that the operation is cancellable.
     func testOperationIsCancellable() {
         
         let timeToSleep: UInt32 = 2
         
-        let op = BlockBasedAsynchronousOperation(
+        let op = BlockBasedAsynchronousOperation<Void, TestError>(
             block: self.block(toSleep: timeToSleep)
         )
         
@@ -328,7 +480,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         let timeToSleep: UInt32 = 2
         let timesToSleep: Int64 = 5
         
-        let op = BlockBasedAsynchronousOperation(
+        let op = BlockBasedAsynchronousOperation<Void, TestError>(
             block: self.block(
                 toSleep: timeToSleep,
                 times: timesToSleep

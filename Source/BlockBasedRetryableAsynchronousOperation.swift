@@ -13,7 +13,9 @@ import PromiseKit
  A `RetryableAsynchronousOperation` is a subclass of `AsynchronousOperation`
  that will retry an operation until it succeeds or a limit is reached.
  */
-open class BlockBasedRetryableAsynchronousOperation<ReturnType>: RetryableAsynchronousOperation<ReturnType> {
+open class BlockBasedRetryableAsynchronousOperation<ReturnType, ExecutionError>:
+RetryableAsynchronousOperation<ReturnType, ExecutionError>
+where ExecutionError: RetryableOperationError {
     
     /// Block that will be run when this operation is started.
     internal var block: ((Void) -> Promise<ReturnType>)! = nil
@@ -67,8 +69,15 @@ open class BlockBasedRetryableAsynchronousOperation<ReturnType>: RetryableAsynch
         
         self.block()
             .then { result -> Void in self.finish(result) }
-            .then { self.completionBlock?() }
-            .catch { _ in self.main() }
+            .catch { _ in
+                
+                guard self.attempts <= self.maximumAttempts else {
+                    return self.finish(error: ExecutionError.ReachedRetryLimit)
+                }
+                
+                self.main()
+        
+            }
         
     }
     

@@ -12,6 +12,14 @@
 		1305A1D41DFC261F00FF1C88 /* BlockBasedAsynchronousOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1305A1D21DFC261F00FF1C88 /* BlockBasedAsynchronousOperationTest.swift */; };
 		1305A1E31DFC62BD00FF1C88 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1305A1E21DFC62BD00FF1C88 /* Info.plist */; };
 		1305A1E51DFC62C600FF1C88 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1305A1E41DFC62C600FF1C88 /* Info.plist */; };
+		1308D5061E4E1E9900FF6D2D /* RecursionTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1308D5051E4E1E9900FF6D2D /* RecursionTest.swift */; };
+		1308D5071E4E1E9900FF6D2D /* RecursionTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1308D5051E4E1E9900FF6D2D /* RecursionTest.swift */; };
+		13907C2C1E4E388B005B4583 /* BaseImplementationsTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13907C2B1E4E388B005B4583 /* BaseImplementationsTest.swift */; };
+		13907C2D1E4E388B005B4583 /* BaseImplementationsTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13907C2B1E4E388B005B4583 /* BaseImplementationsTest.swift */; };
+		13907C2F1E4E4416005B4583 /* SimpleOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13907C2E1E4E4416005B4583 /* SimpleOperationTest.swift */; };
+		13907C301E4E4416005B4583 /* SimpleOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13907C2E1E4E4416005B4583 /* SimpleOperationTest.swift */; };
+		13907C321E4E5505005B4583 /* RetryableAsynchronousOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13907C311E4E5505005B4583 /* RetryableAsynchronousOperationTest.swift */; };
+		13907C331E4E5505005B4583 /* RetryableAsynchronousOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13907C311E4E5505005B4583 /* RetryableAsynchronousOperationTest.swift */; };
 		13C26AD31DFD21A2004CC79D /* BlockBasedRetryableAsynchronousOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C26AD21DFD21A2004CC79D /* BlockBasedRetryableAsynchronousOperationTest.swift */; };
 		13C26AD41DFD21A2004CC79D /* BlockBasedRetryableAsynchronousOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C26AD21DFD21A2004CC79D /* BlockBasedRetryableAsynchronousOperationTest.swift */; };
 		F0276A6E203F3EDD38AA1570 /* Pods_macOS_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D9A0488F2DD58D980E11C47 /* Pods_macOS_Tests.framework */; };
@@ -25,6 +33,10 @@
 		1305A1D21DFC261F00FF1C88 /* BlockBasedAsynchronousOperationTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BlockBasedAsynchronousOperationTest.swift; sourceTree = "<group>"; };
 		1305A1E21DFC62BD00FF1C88 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = iOS/Info.plist; sourceTree = "<group>"; };
 		1305A1E41DFC62C600FF1C88 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = macOS/Info.plist; sourceTree = "<group>"; };
+		1308D5051E4E1E9900FF6D2D /* RecursionTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecursionTest.swift; sourceTree = "<group>"; };
+		13907C2B1E4E388B005B4583 /* BaseImplementationsTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseImplementationsTest.swift; sourceTree = "<group>"; };
+		13907C2E1E4E4416005B4583 /* SimpleOperationTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SimpleOperationTest.swift; sourceTree = "<group>"; };
+		13907C311E4E5505005B4583 /* RetryableAsynchronousOperationTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RetryableAsynchronousOperationTest.swift; sourceTree = "<group>"; };
 		13C26AD21DFD21A2004CC79D /* BlockBasedRetryableAsynchronousOperationTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BlockBasedRetryableAsynchronousOperationTest.swift; sourceTree = "<group>"; };
 		1D9A0488F2DD58D980E11C47 /* Pods_macOS_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_macOS_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		23D2360C6350913DFBB30309 /* Pods-macOS Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-macOS Tests.release.xcconfig"; path = "Pods/Target Support Files/Pods-macOS Tests/Pods-macOS Tests.release.xcconfig"; sourceTree = "<group>"; };
@@ -78,6 +90,10 @@
 			children = (
 				13C26AD21DFD21A2004CC79D /* BlockBasedRetryableAsynchronousOperationTest.swift */,
 				1305A1D21DFC261F00FF1C88 /* BlockBasedAsynchronousOperationTest.swift */,
+				1308D5051E4E1E9900FF6D2D /* RecursionTest.swift */,
+				13907C2B1E4E388B005B4583 /* BaseImplementationsTest.swift */,
+				13907C2E1E4E4416005B4583 /* SimpleOperationTest.swift */,
+				13907C311E4E5505005B4583 /* RetryableAsynchronousOperationTest.swift */,
 				1305A1D01DFC261F00FF1C88 /* macOS Tests-Bridging-Header.h */,
 				1305A1D11DFC261F00FF1C88 /* iOS Tests-Bridging-Header.h */,
 				1305A1E11DFC62B200FF1C88 /* macOS */,
@@ -323,8 +339,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				13907C2C1E4E388B005B4583 /* BaseImplementationsTest.swift in Sources */,
 				1305A1D31DFC261F00FF1C88 /* BlockBasedAsynchronousOperationTest.swift in Sources */,
 				13C26AD31DFD21A2004CC79D /* BlockBasedRetryableAsynchronousOperationTest.swift in Sources */,
+				1308D5061E4E1E9900FF6D2D /* RecursionTest.swift in Sources */,
+				13907C321E4E5505005B4583 /* RetryableAsynchronousOperationTest.swift in Sources */,
+				13907C2F1E4E4416005B4583 /* SimpleOperationTest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -332,8 +352,12 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				13907C2D1E4E388B005B4583 /* BaseImplementationsTest.swift in Sources */,
 				1305A1D41DFC261F00FF1C88 /* BlockBasedAsynchronousOperationTest.swift in Sources */,
 				13C26AD41DFD21A2004CC79D /* BlockBasedRetryableAsynchronousOperationTest.swift in Sources */,
+				1308D5071E4E1E9900FF6D2D /* RecursionTest.swift in Sources */,
+				13907C331E4E5505005B4583 /* RetryableAsynchronousOperationTest.swift in Sources */,
+				13907C301E4E4416005B4583 /* SimpleOperationTest.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

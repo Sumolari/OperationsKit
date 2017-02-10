@@ -13,10 +13,26 @@ import Nimble
 
 class BlockBasedRetryableAsynchronousOperationTest: XCTestCase {
     
-    /// Well known errors that can be produced in these tests.
-    enum TestError: Error {
-        /// Expected error.
+    /** 
+     Well known errors that can be produced in these tests.
+     
+     - expected: Expected error.
+     */
+    enum TestError: RetryableOperationError {
+        
+        public static var Cancelled: TestError { return .cancelled }
+        
+        public static var Unknown: TestError { return .unknown }
+        
+        public static var ReachedRetryLimit: TestError {
+            return .reachedRetryLimit
+        }
+        
+        case cancelled
+        case unknown
+        case reachedRetryLimit
         case expected
+        
     }
     
     override func setUp() {
@@ -91,7 +107,7 @@ class BlockBasedRetryableAsynchronousOperationTest: XCTestCase {
         
         let retriesRequired: UInt64 = 3
         
-        let op = BlockBasedRetryableAsynchronousOperation(
+        let op = BlockBasedRetryableAsynchronousOperation<Void, TestError>(
             maximumAttempts: retriesRequired,
             block: self.block(toRetry: retriesRequired)
         )
@@ -114,13 +130,49 @@ class BlockBasedRetryableAsynchronousOperationTest: XCTestCase {
         
     }
     
+    /// Tests that completion block is called only once.
+    func testCompletionBlockIsCalledOnce() {
+        
+        let retriesRequired: UInt64 = 3
+        
+        let op = BlockBasedRetryableAsynchronousOperation<Void, TestError>(
+            maximumAttempts: retriesRequired,
+            block: self.block(toRetry: retriesRequired)
+        )
+        
+        var counter = 0
+        op.completionBlock = { _ in counter += 1 }
+        
+        expect(counter).to(equal(0))
+        expect(op.isExecuting).to(beFalse())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beFalse())
+        
+        let queue = OperationQueue()
+        queue.qualityOfService = .background
+        queue.addOperation(op)
+        
+        expect(op.promise.isResolved).to(beFalse())
+        expect(op.promise.isFulfilled).to(beFalse())
+        expect(op.promise.isRejected).to(beFalse())
+        
+        expect(op.promise.isResolved).toEventually(beTrue())
+        expect(op.promise.isFulfilled).toEventually(beTrue())
+        expect(op.promise.isRejected).toNotEventually(beTrue())
+        
+        expect(counter).toEventually(equal(1))
+        expect(counter).toNotEventually(equal(2))
+        expect(counter).toNotEventually(equal(0))
+        
+    }
+    
     /// Tests that the operation is actually retried but maximum allowed retry
     /// count is not exceeded.
     func testOperationIsRetriedWithLimits() {
         
         let retriesRequired: UInt64 = 3
         
-        let op = BlockBasedRetryableAsynchronousOperation(
+        let op = BlockBasedRetryableAsynchronousOperation<Void, TestError>(
             maximumAttempts: retriesRequired - 1,
             block: self.block(toRetry: retriesRequired)
         )
@@ -140,6 +192,80 @@ class BlockBasedRetryableAsynchronousOperationTest: XCTestCase {
         expect(op.promise.isResolved).toNotEventually(beTrue())
         expect(op.promise.isFulfilled).toNotEventually(beTrue())
         expect(op.promise.isRejected).toEventually(beTrue())
+        expect(op.promise.error).toEventually(
+            matchError(TestError.ReachedRetryLimit)
+        )
+        
+    }
+    
+    /// Tests that the operation is actually retried but maximum allowed retry
+    /// count is not exceeded.
+    func testOperationIsRetriedWithLimitsAndRejectWithBaseError() {
+        
+        let retriesRequired: UInt64 = 3
+        
+        let op = BlockBasedRetryableAsynchronousOperation<Void, BaseRetryableOperationError>(
+            maximumAttempts: retriesRequired - 1,
+            block: self.block(toRetry: retriesRequired)
+        )
+        
+        expect(op.isExecuting).to(beFalse())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beFalse())
+        
+        let queue = OperationQueue()
+        queue.qualityOfService = .background
+        queue.addOperation(op)
+        
+        expect(op.promise.isResolved).to(beFalse())
+        expect(op.promise.isFulfilled).to(beFalse())
+        expect(op.promise.isRejected).to(beFalse())
+        
+        expect(op.promise.isResolved).toNotEventually(beTrue())
+        expect(op.promise.isFulfilled).toNotEventually(beTrue())
+        expect(op.promise.isRejected).toEventually(beTrue())
+        expect(op.promise.error).toEventually(
+            matchError(BaseRetryableOperationError.ReachedRetryLimit)
+        )
+        
+    }
+    
+    /// Tests that completion block is called when operation fails.
+    func testCompletionBlockIsCalledWhenFailed() {
+        
+        let retriesRequired: UInt64 = 3
+        
+        let op = BlockBasedRetryableAsynchronousOperation<Void, TestError>(
+            maximumAttempts: retriesRequired - 1,
+            block: self.block(toRetry: retriesRequired)
+        )
+        
+        var counter = 0
+        op.completionBlock = { _ in counter += 1 }
+        
+        expect(counter).to(equal(0))
+        expect(op.isExecuting).to(beFalse())
+        expect(op.isCancelled).to(beFalse())
+        expect(op.isFinished).to(beFalse())
+        
+        let queue = OperationQueue()
+        queue.qualityOfService = .background
+        queue.addOperation(op)
+        
+        expect(op.promise.isResolved).to(beFalse())
+        expect(op.promise.isFulfilled).to(beFalse())
+        expect(op.promise.isRejected).to(beFalse())
+        
+        expect(op.promise.isResolved).toNotEventually(beTrue())
+        expect(op.promise.isFulfilled).toNotEventually(beTrue())
+        expect(op.promise.isRejected).toEventually(beTrue())
+        expect(op.promise.error).toEventually(
+            matchError(TestError.ReachedRetryLimit)
+        )
+        
+        expect(counter).toEventually(equal(1))
+        expect(counter).toNotEventually(equal(2))
+        expect(counter).toNotEventually(equal(0))
         
     }
     
@@ -148,7 +274,7 @@ class BlockBasedRetryableAsynchronousOperationTest: XCTestCase {
         
         let retriesRequired: UInt64 = 3
         
-        let op = BlockBasedRetryableAsynchronousOperation(
+        let op = BlockBasedRetryableAsynchronousOperation<Void, TestError>(
             maximumAttempts: retriesRequired,
             block: self.blockWithProgress(toRetry: retriesRequired)
         )

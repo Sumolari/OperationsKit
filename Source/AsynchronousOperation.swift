@@ -9,14 +9,54 @@
 import Foundation
 import PromiseKit
 import ReactiveCocoa
+import enum Result.Result
 
 /**
- Common errors to be throw by any kind of asynchronous operation.
- 
- - cancelled: The operation was cancelled.
+ Common errors that may be throw by any kind of asynchronous operation.
  */
-public enum AsynchronousOperationCommonError: Error {
+public protocol OperationError: Swift.Error {
+    
+    /// The operation was cancelled.
+    static var Cancelled: Self { get }
+    
+    /// The operation failed due to an unknown error.
+    static var Unknown: Self { get }
+    
+    /**
+     Wraps given error, returning an instance of this type if original error
+     was one or an `Unknown` error if it wasn't.
+     
+     - parameter error: Error to be wrapped.
+     
+     - returns: Proper instance of this type for given error.
+     */
+    static func wrap(_ error: Swift.Error) -> Self
+    
+}
+
+extension OperationError {
+    
+    public static func wrap(_ error: Swift.Error) -> Self {
+        guard let knownError = error as? Self else { return Self.Unknown }
+        return knownError
+    }
+    
+}
+
+/**
+ Common errors that may be throw by any kind of asynchronous operation.
+ 
+ - canceled: The operation was cancelled.
+ - unknown:  The operation failed due to an unknown error.
+ */
+public enum BaseOperationError: OperationError {
+    
+    public static var Cancelled: BaseOperationError { return .cancelled }
+    public static var Unknown: BaseOperationError { return .unknown }
+
     case cancelled
+    case unknown
+    
 }
 
 /**
@@ -29,7 +69,8 @@ public enum AsynchronousOperationCommonError: Error {
  Instances of this class have getters to retrieve the underlying promise which
  is wrapped in an additional promise to allow cancellation.
  */
-open class AsynchronousOperation<ReturnType>: Operation {
+open class AsynchronousOperation<ReturnType, ExecutionError>: Operation
+where ExecutionError: OperationError {
     
     /// Progress of this operation, optional.
     open internal(set) var progress: Progress? = nil
@@ -47,6 +88,10 @@ open class AsynchronousOperation<ReturnType>: Operation {
     /// Lock used to prevent race conditions when changing internal state
     /// (`isExecuting`, `isFinished`).
     fileprivate let stateLock = NSLock()
+    
+    /// Return value of this operation. Will be `nil` until operation finishes
+    /// or when there's an error.
+    open fileprivate(set) var result: Result<ReturnType, ExecutionError>? = nil
     
     /// Date when this operation started.
     open fileprivate(set) var startDate: Date? = nil
@@ -146,7 +191,7 @@ open class AsynchronousOperation<ReturnType>: Operation {
     
     open override func cancel() {
         super.cancel()
-        self.finish(error: AsynchronousOperationCommonError.cancelled)
+        self.finish(error: ExecutionError.Cancelled)
     }
     
     /// Changes internal state to reflect that this operation has either 
@@ -167,6 +212,7 @@ open class AsynchronousOperation<ReturnType>: Operation {
      */
     public func finish(_ returnValue: ReturnType) {
         self.markAsFinished()
+        self.result = .success(returnValue)
         self.fulfillPromise(returnValue)
     }
     
@@ -178,8 +224,9 @@ open class AsynchronousOperation<ReturnType>: Operation {
      
      - parameter error: Error to be thrown back.
      */
-    public func finish(error: Error) {
+    public func finish(error: ExecutionError) {
         self.markAsFinished()
+        self.result = .failure(error)
         self.rejectPromise(error)
     }
     

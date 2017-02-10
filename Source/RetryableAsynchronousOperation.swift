@@ -10,19 +10,49 @@ import Foundation
 import PromiseKit
 
 /**
- Common errors to be throw by any kind of retryable asynchronous operation.
- 
- - reachedRetryLimit: The operation reached its maximum retry limit.
+ Common errors that may be thrown by any kind of retryable asynchronous 
+ operation.
  */
-public enum RetryableOperationCommonError: Error {
+public protocol RetryableOperationError: OperationError {
+    
+    /// Operation reached its retry limit without success.
+    static var ReachedRetryLimit: Self { get }
+    
+}
+
+/**
+ Common errors that may be throw by any kind of asynchronous operation.
+ 
+ - canceled:          The operation was cancelled.
+ - unknown:           The operation failed due to an unknown error.
+ - reachedRetryLimit: Operation reached its retry limit without success.
+ */
+public enum BaseRetryableOperationError: RetryableOperationError {
+    
+    public static var Cancelled: BaseRetryableOperationError {
+        return .cancelled
+    }
+    
+    public static var Unknown: BaseRetryableOperationError {
+        return .unknown
+    }
+    
+    public static var ReachedRetryLimit: BaseRetryableOperationError {
+        return .reachedRetryLimit
+    }
+    
+    case cancelled
+    case unknown
     case reachedRetryLimit
+    
 }
 
 /**
  A `RetryableAsynchronousOperation` is a subclass of `AsynchronousOperation` 
  that will retry an operation until it succeeds or a limit is reached.
  */
-open class RetryableAsynchronousOperation<ReturnType>: AsynchronousOperation<ReturnType> {
+open class RetryableAsynchronousOperation<ReturnType, ExecutionError>: AsynchronousOperation<ReturnType, ExecutionError>
+where ExecutionError: RetryableOperationError {
 
     /// Maximum amount of times the operation will be retried before giving up.
     open private(set) var maximumAttempts: UInt64
@@ -40,9 +70,7 @@ open class RetryableAsynchronousOperation<ReturnType>: AsynchronousOperation<Ret
         super.main()
         
         guard self.attempts <= self.maximumAttempts else {
-            return self.finish(
-                error: RetryableOperationCommonError.reachedRetryLimit
-            )
+            return self.finish(error: ExecutionError.ReachedRetryLimit)
         }
         
         self.attempts += 1

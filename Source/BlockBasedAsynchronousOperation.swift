@@ -20,7 +20,8 @@ import ReactiveCocoa
  Instances of this class have getters to retrieve the underlying promise which
  is wrapped in an additional promise to allow cancellation.
  */
-open class BlockBasedAsynchronousOperation<ReturnType>: AsynchronousOperation<ReturnType> {
+open class BlockBasedAsynchronousOperation<ReturnType, ExecutionError>: AsynchronousOperation<ReturnType, ExecutionError>
+where ExecutionError: OperationError {
     
     /// Block that will be run when this operation is started.
     internal var block: ((Void) -> Promise<ReturnType>)! = nil
@@ -69,7 +70,7 @@ open class BlockBasedAsynchronousOperation<ReturnType>: AsynchronousOperation<Re
         self.block()
             .then { result -> Void in self.finish(result) }
             .then { self.completionBlock?() }
-            .catch { error in self.finish(error: error) }
+            .catch { error in self.finish(error: ExecutionError.wrap(error)) }
     }
     
 }
