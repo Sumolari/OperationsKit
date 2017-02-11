@@ -69,7 +69,6 @@ where ExecutionError: OperationError {
         super.main()
         self.block()
             .then { result -> Void in self.finish(result) }
-            .then { self.completionBlock?() }
             .catch { error in self.finish(error: ExecutionError.wrap(error)) }
     }
     
