@@ -118,25 +118,23 @@ where ExecutionError: OperationError {
             return self.stateLock.withCriticalScope { self._executing }
         }
         set {
+            
+            guard self.isExecuting != newValue else { return }
+            
             willChangeValue(forKey: "isExecuting")
             
             self.stateLock.withCriticalScope {
+                    
+                self._executing = newValue
                 
-                if self._executing != newValue {
-                    
-                    self._executing = newValue
-                    
-                    if newValue {
-                        self.startDate = Date()
-                    } else {
-                        self.endDate = Date()
-                    }
-                    
+                if newValue {
+                    self.startDate = Date()
                 }
                 
             }
             
             didChangeValue(forKey: "isExecuting")
+            
         }
     }
     
@@ -153,15 +151,23 @@ where ExecutionError: OperationError {
             return self.stateLock.withCriticalScope { self._finished }
         }
         set {
+            
+            guard self.isFinished != newValue else { return }
+            
             willChangeValue(forKey: "isFinished")
             
             self.stateLock.withCriticalScope {
-                if self._finished != newValue {
-                    self._finished = newValue
+                    
+                self._finished = newValue
+                
+                if newValue {
+                    self.endDate = Date()
                 }
+                
             }
             
             didChangeValue(forKey: "isFinished")
+            
         }
     }
     
