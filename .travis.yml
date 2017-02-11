@@ -26,15 +26,21 @@ cache:
 before_install:
   - pod repo update > /dev/null
 
-script:
-  - set -o pipefail
-  - xcodebuild -version
-  - xcodebuild -showsdks
-
+install:
   - cd Tests
   - pod install
 
+before_script:
+  - xcodebuild -version
+  - xcodebuild -showsdks
+  - cd Tests
   - xcodebuild -workspace "$WORKSPACE" -list
+
+script:
+  - set -o pipefail
+
+  - cd Tests
+  - pod install
 
   # Build Framework in Debug and Run Tests
   - xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -sdk "$SDK" -destination "$DESTINATION" -configuration Debug ONLY_ACTIVE_ARCH=NO test | xcpretty -c;
