@@ -444,7 +444,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         queue.qualityOfService = .background
         queue.addOperation(op)
         
-        sleep(type(of:self).startThreshold) // To let queue to start operation
+        usleep(type(of:self).startThreshold * 1000) // To let queue to start operation
         
         expect(op.promise.isResolved).to(beFalse())
         expect(op.promise.isFulfilled).to(beFalse())

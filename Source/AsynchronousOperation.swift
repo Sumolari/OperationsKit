@@ -197,7 +197,8 @@ where ExecutionError: OperationError {
     
     open override func cancel() {
         super.cancel()
-        self.finish(error: ExecutionError.Cancelled)
+        self.markAsFinished()
+        self.rejectPromise(ExecutionError.Cancelled)
     }
     
     /// Changes internal state to reflect that this operation has either 
@@ -217,6 +218,7 @@ where ExecutionError: OperationError {
      - parameter returnValue: Value to be used to fulfill promise.
      */
     public func finish(_ returnValue: ReturnType) {
+        guard !self.isCancelled else { return }
         self.markAsFinished()
         self.result = .success(returnValue)
         self.fulfillPromise(returnValue)
@@ -231,6 +233,7 @@ where ExecutionError: OperationError {
      - parameter error: Error to be thrown back.
      */
     public func finish(error: ExecutionError) {
+        guard !self.isCancelled else { return }
         self.markAsFinished()
         self.result = .failure(error)
         self.rejectPromise(error)
