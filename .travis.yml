@@ -19,10 +19,6 @@ env:
     - DESTINATION="OS=10.2,name=iPad Air 2"     SCHEME="$IOS_SCHEME"    SDK="$IOS_SDK"    POD_LINT="NO"
     - DESTINATION="arch=x86_64"                 SCHEME="$OSX_SCHEME"    SDK="$OSX_SDK"    POD_LINT="YES"
 
-cache:
-  directories:
-    - $HOME/.cocoapods/
-
 before_install:
   - pod repo update > /dev/null
 
