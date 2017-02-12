@@ -41,16 +41,7 @@ class RecursionTest: XCTestCase {
             
             super.main()
             
-            print(String(format: "Computing fib(%d)", self.desiredValue))
-            
             guard self.desiredValue > 1 else {
-                print(
-                    String(
-                        format: "fib(%d)=%d",
-                        self.desiredValue,
-                        self.desiredValue
-                    )
-                )
                 return self.finish(self.desiredValue)
             }
             
@@ -72,21 +63,7 @@ class RecursionTest: XCTestCase {
             self.markAsFinished()
             
             when(fulfilled: operations.map { $0.promise })
-                .then { results -> Void in
-                    
-                    let sum = results.reduce(0, +)
-                    
-                    print(
-                        String(
-                            format: "fib(%d)=%d",
-                            self.desiredValue,
-                            sum
-                        )
-                    )
-                    
-                    self.finish(sum)
-                    
-                }
+                .then { self.finish($0.reduce(0, +)) }
                 .catch { error in self.finish(error: BaseOperationError.wrap(error)) }
             
         }
@@ -152,7 +129,7 @@ class RecursionTest: XCTestCase {
                 return self.finish(self.currentDepth)
             }
             
-            sleep(type(of: self).drillingTime)
+            usleep(type(of: self).drillingTime * 1000)
             
             let child = DrillOperation(
                 currentDepth: self.currentDepth + 1,
@@ -198,6 +175,7 @@ class RecursionTest: XCTestCase {
     func testMarkAsFinished() {
         
         let timeToWait: UInt32 = 5
+        let expectationsWaitTime = TimeInterval(2 * timeToWait)
         
         let op = DrillOperation(requiredDepth: timeToWait)
         
@@ -205,22 +183,22 @@ class RecursionTest: XCTestCase {
         
         expect(op.promise.value).toEventually(
             equal(timeToWait),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isResolved).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isFulfilled).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isRejected).toNotEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
     }
@@ -230,6 +208,7 @@ class RecursionTest: XCTestCase {
     func testMarkAsFinishedWithMultipleChildren() {
         
         let timeToWait: UInt32 = 1
+        let expectationsWaitTime = TimeInterval(2 * timeToWait)
         
         let result: (UInt32, UInt32) = (10, 55)
         
@@ -239,22 +218,22 @@ class RecursionTest: XCTestCase {
         
         expect(op.promise.value).toEventually(
             equal(result.1),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isResolved).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isFulfilled).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isRejected).toNotEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
     }

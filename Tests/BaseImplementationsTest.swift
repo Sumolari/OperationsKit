@@ -13,6 +13,9 @@ import PromiseKit
 
 class BaseImplementationsTest: XCTestCase {
     
+    /// Small delay to wait to let operation queue start operations.
+    static let startThreshold: UInt32 = 500
+    
     /// Operation queue to be used for this test case.
     static let queue: OperationQueue = {
         
@@ -65,7 +68,7 @@ class BaseImplementationsTest: XCTestCase {
             
             super.main()
             
-            sleep(self.waitingTime)
+            usleep(self.waitingTime * 1000)
             
             self.finish(error: BaseRetryableOperationError.Unknown)
             
@@ -92,6 +95,7 @@ class BaseImplementationsTest: XCTestCase {
     func testBaseOperationErrorUnknown() {
         
         let timeToWait: UInt32 = 1
+        let expectationsWaitTime = TimeInterval(2 * timeToWait)
         
         let op = ExplicitUnknownErrorOperation(waitingTime: 1)
         
@@ -99,22 +103,22 @@ class BaseImplementationsTest: XCTestCase {
         
         expect(op.promise.error).toEventually(
             matchError(BaseOperationError.Unknown),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isResolved).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isFulfilled).toNotEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isRejected).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
     }
@@ -124,6 +128,7 @@ class BaseImplementationsTest: XCTestCase {
     func testOperationUnknownErrorTransform() {
         
         let timeToWait: UInt32 = 1
+        let expectationsWaitTime = TimeInterval(5 * timeToWait)
         
         let op = BlockBasedAsynchronousOperation<Void, BaseOperationError>() {
             
@@ -135,7 +140,7 @@ class BaseImplementationsTest: XCTestCase {
                 
                 DispatchQueue.global(qos: .default).async {
 
-                    sleep(timeToWait)
+                    usleep(timeToWait * 1000)
                     
                     reject(
                         NSError(
@@ -157,22 +162,22 @@ class BaseImplementationsTest: XCTestCase {
         
         expect(op.promise.error).toEventually(
             matchError(BaseOperationError.Unknown),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isResolved).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isFulfilled).toNotEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isRejected).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
     }
@@ -182,6 +187,7 @@ class BaseImplementationsTest: XCTestCase {
     func testBaseOperationErrorCancelled() {
         
         let timeToWait: UInt32 = 1
+        let expectationsWaitTime = TimeInterval(2 * timeToWait)
         
         let op = ExplicitUnknownErrorOperation(waitingTime: 1)
         
@@ -191,22 +197,22 @@ class BaseImplementationsTest: XCTestCase {
         
         expect(op.promise.error).toEventually(
             matchError(BaseOperationError.Cancelled),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isResolved).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isFulfilled).toNotEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isRejected).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
     }
@@ -216,6 +222,7 @@ class BaseImplementationsTest: XCTestCase {
     func testBaseRetryableOperationErrorUnknown() {
         
         let timeToWait: UInt32 = 1
+        let expectationsWaitTime = TimeInterval(2 * timeToWait)
         
         let op = ExplicitUnknownErrorRetryableOperation(waitingTime: 1)
         
@@ -223,22 +230,22 @@ class BaseImplementationsTest: XCTestCase {
         
         expect(op.promise.error).toEventually(
             matchError(BaseRetryableOperationError.Unknown),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isResolved).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isFulfilled).toNotEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isRejected).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
     }
@@ -248,6 +255,7 @@ class BaseImplementationsTest: XCTestCase {
     func testRetryableOperationUnknownErrorTransform() {
         
         let timeToWait: UInt32 = 1
+        let expectationsWaitTime = TimeInterval(5 * timeToWait)
         
         let op = BlockBasedRetryableAsynchronousOperation<Void, BaseRetryableOperationError>() {
             
@@ -259,7 +267,7 @@ class BaseImplementationsTest: XCTestCase {
                 
                 DispatchQueue.global(qos: .default).async {
                     
-                    sleep(timeToWait)
+                    usleep(timeToWait * 1000)
                     
                     reject(
                         NSError(
@@ -281,22 +289,22 @@ class BaseImplementationsTest: XCTestCase {
         
         expect(op.promise.error).toEventually(
             matchError(BaseRetryableOperationError.ReachedRetryLimit),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isResolved).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isFulfilled).toNotEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isRejected).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
     }
@@ -306,31 +314,34 @@ class BaseImplementationsTest: XCTestCase {
     func testBaseRetryableOperationErrorCancelled() {
         
         let timeToWait: UInt32 = 1
+        let expectationsWaitTime = TimeInterval(2 * timeToWait)
         
         let op = ExplicitUnknownErrorRetryableOperation(waitingTime: 1)
         
         type(of: self).queue.addOperation(op)
         
+        usleep(type(of: self).startThreshold)
+        
         op.cancel()
         
         expect(op.promise.error).toEventually(
             matchError(BaseRetryableOperationError.Cancelled),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isResolved).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isFulfilled).toNotEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isRejected).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToWait)
+            timeout: expectationsWaitTime
         )
         
     }

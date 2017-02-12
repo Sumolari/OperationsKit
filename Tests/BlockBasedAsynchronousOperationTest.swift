@@ -30,7 +30,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
     }
     
     /// Small delay to wait to let operation queue start operations.
-    static let startThreshold: UInt32 = 1
+    static let startThreshold: UInt32 = 500
     
     override func setUp() {
         super.setUp()
@@ -49,16 +49,16 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
     /**
      Returns a block for an asynchronous operation that will sleep some seconds.
      
-     - parameter seconds: Seconds the block should sleep.
+     - parameter ms: Milliseconds the block should sleep.
      
      - returns: Promise wrapping the asynchronous operation.
      */
-    fileprivate func block(toSleep seconds: UInt32) -> (Void) -> Promise<Void> {
+    fileprivate func block(toSleep ms: UInt32) -> (Void) -> Promise<Void> {
         
         return {
             return Promise<Void>() { fulfill, _ in
-                print("Operation started, sleeping for \(seconds) seconds")
-                sleep(seconds)
+                print("Operation started, sleeping for \(ms) ms")
+                usleep(ms * 1000)
                 print("Operation woke up!")
                 fulfill()
             }
@@ -70,13 +70,13 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
      Returns a block for an asynchronous operation that will sleep some seconds
      and track its progress.
      
-     - parameter seconds: Seconds the block should sleep each time.
+     - parameter ms: Milliseconds the block should sleep each time.
      - parameter times: Times that the block should sleep.
      
      - returns: Progress and promise wrapping the asynchronous operation.
      */
     fileprivate func block(
-        toSleep seconds: UInt32,
+        toSleep ms: UInt32,
         times: Int64
     ) -> (Void) -> ProgressAndPromise<Void> {
         
@@ -85,9 +85,9 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
             let progress = Progress(totalUnitCount: times)
             
             let promise = Promise<Void>() { fulfill, _ in
-                print("Operation started, sleeping for \(seconds) seconds \(times) times")
+                print("Operation started, sleeping for \(ms) ms \(times) times")
                 for i in 0..<times {
-                    sleep(seconds)
+                    usleep(ms * 1000)
                     progress.completedUnitCount = i + 1
                     print("Operation woke up! \(times - i - 1) times remaining...")
                 }
@@ -103,18 +103,18 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
     /**
      Returns a block for an asynchronous operation that will sleep some seconds.
      
-     - parameter seconds: Seconds the block should sleep.
+     - parameter ms: Milliseconds the block should sleep.
      
      - returns: Promise wrapping the asynchronous operation.
      */
     fileprivate func block(
-        toFailAfterSleeping seconds: UInt32
+        toFailAfterSleeping ms: UInt32
     ) -> (Void) -> Promise<Void> {
         
         return {
             return Promise<Void>() { _, reject in
-                print("Operation started, sleeping for \(seconds) seconds")
-                sleep(seconds)
+                print("Operation started, sleeping for \(ms) ms")
+                usleep(ms)
                 print("Operation woke up!")
                 reject(TestError.expected)
             }
@@ -126,6 +126,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
     func testOperationIsAsynchronous() {
         
         let timeToSleep: UInt32 = 2
+        let expectationsWaitTime = TimeInterval(2 * timeToSleep)
         
         let op = BlockBasedAsynchronousOperation<Void, TestError>(
             block: self.block(toSleep: timeToSleep)
@@ -139,7 +140,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         queue.qualityOfService = .background
         queue.addOperation(op)
         
-        sleep(type(of:self).startThreshold) // To let queue to start operation
+        usleep(type(of:self).startThreshold) // To let queue to start operation
         
         expect(op.isExecuting).to(beTrue())
         expect(op.isCancelled).to(beFalse())
@@ -154,17 +155,17 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         
         expect(op.promise.isResolved).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isFulfilled).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isRejected).toNotEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.isExecuting).to(beFalse())
@@ -177,6 +178,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
     func testOperationSucceeds() {
         
         let timeToSleep: UInt32 = 2
+        let expectationsWaitTime = TimeInterval(2 * timeToSleep)
         
         let op = BlockBasedAsynchronousOperation<Void, TestError>(
             block: self.block(toSleep: timeToSleep)
@@ -196,7 +198,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         queue.qualityOfService = .background
         queue.addOperation(op)
         
-        sleep(type(of:self).startThreshold) // To let queue to start operation
+        usleep(type(of:self).startThreshold) // To let queue to start operation
         
         expect(op.isExecuting).to(beTrue())
         expect(op.isCancelled).to(beFalse())
@@ -208,22 +210,22 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         
         expect(op.promise.isResolved).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isFulfilled).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isRejected).toNotEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(finished).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.isExecuting).to(beFalse())
@@ -234,7 +236,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         
         expect(op.executionDuration).toEventually(
             beCloseTo(ellapsedTime, within: 0.5),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         
@@ -245,6 +247,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
     func testCompletionBlockIsCalledOnce() {
         
         let timeToSleep: UInt32 = 2
+        let expectationsWaitTime = TimeInterval(2 * timeToSleep)
         
         let op = BlockBasedAsynchronousOperation<Void, TestError>(
             block: self.block(toSleep: timeToSleep)
@@ -266,7 +269,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         
         expect(counter).to(equal(0))
         
-        sleep(type(of:self).startThreshold) // To let queue to start operation
+        usleep(type(of:self).startThreshold) // To let queue to start operation
         
         expect(op.isExecuting).to(beTrue())
         expect(op.isCancelled).to(beFalse())
@@ -278,22 +281,22 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         
         expect(op.promise.isResolved).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isFulfilled).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isRejected).toNotEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(finished).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.isExecuting).to(beFalse())
@@ -310,6 +313,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
     func testOperationFails() {
         
         let timeToSleep: UInt32 = 2
+        let expectationsWaitTime = TimeInterval(2 * timeToSleep)
         
         let op = BlockBasedAsynchronousOperation<Void, TestError>(
             block: self.block(toFailAfterSleeping: timeToSleep)
@@ -326,7 +330,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         queue.qualityOfService = .background
         queue.addOperation(op)
         
-        sleep(type(of:self).startThreshold) // To let queue to start operation
+        usleep(type(of:self).startThreshold) // To let queue to start operation
         
         expect(op.isExecuting).to(beTrue())
         expect(op.isCancelled).to(beFalse())
@@ -338,22 +342,22 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         
         expect(op.promise.isResolved).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isFulfilled).toNotEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isRejected).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(finished).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.isExecuting).to(beFalse())
@@ -366,6 +370,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
     func testCompletionBlockIsCalledOnFail() {
         
         let timeToSleep: UInt32 = 2
+        let expectationsWaitTime = TimeInterval(2 * timeToSleep)
         
         let op = BlockBasedAsynchronousOperation<Void, TestError>(
             block: self.block(toFailAfterSleeping: timeToSleep)
@@ -387,7 +392,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         
         expect(counter).to(equal(0))
         
-        sleep(type(of:self).startThreshold) // To let queue to start operation
+        usleep(type(of:self).startThreshold) // To let queue to start operation
         
         expect(op.isExecuting).to(beTrue())
         expect(op.isCancelled).to(beFalse())
@@ -399,22 +404,22 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         
         expect(op.promise.isResolved).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isFulfilled).toNotEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isRejected).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(finished).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.isExecuting).to(beFalse())
@@ -431,6 +436,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
     func testOperationIsCancellable() {
         
         let timeToSleep: UInt32 = 2
+        let expectationsWaitTime = TimeInterval(2 * timeToSleep)
         
         let op = BlockBasedAsynchronousOperation<Void, TestError>(
             block: self.block(toSleep: timeToSleep)
@@ -444,7 +450,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         queue.qualityOfService = .background
         queue.addOperation(op)
         
-        usleep(type(of:self).startThreshold * 1000) // To let queue to start operation
+        usleep(type(of:self).startThreshold) // To let queue to start operation
         
         expect(op.promise.isResolved).to(beFalse())
         expect(op.promise.isFulfilled).to(beFalse())
@@ -464,12 +470,12 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         
         expect(op.promise.isResolved).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isFulfilled).toNotEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
     }
@@ -479,6 +485,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         
         let timeToSleep: UInt32 = 2
         let timesToSleep: Int64 = 5
+        let expectationsWaitTime = TimeInterval(2 * timeToSleep)
         
         let op = BlockBasedAsynchronousOperation<Void, TestError>(
             block: self.block(
@@ -497,7 +504,7 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         queue.qualityOfService = .background
         queue.addOperation(op)
         
-        sleep(type(of:self).startThreshold) // To let queue to start operation
+        usleep(type(of:self).startThreshold) // To let queue to start operation
         
         expect(op.progress).toNot(beNil())
         
@@ -516,17 +523,17 @@ class BlockBasedAsynchronousOperationTest: XCTestCase {
         
         expect(op.promise.isResolved).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isFulfilled).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isRejected).toNotEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * timeToSleep)
+            timeout: expectationsWaitTime
         )
         
         expect(op.progress!.fractionCompleted).to(beCloseTo(1.0))

@@ -43,7 +43,7 @@ class RetryableAsynchronousOperationTest: XCTestCase {
             
             super.main()
             
-            sleep(self.waitTime)
+            usleep(self.waitTime * 1000)
             
             self.main()
             
@@ -71,7 +71,7 @@ class RetryableAsynchronousOperationTest: XCTestCase {
         
         let waitTime: UInt32 = 1
         let maximumAttempts: UInt64 = 3
-        let totalWaitTime: UInt32 = (waitTime + 1) * UInt32(maximumAttempts)
+        let expectationsWaitTime = TimeInterval((waitTime + 1) * UInt32(maximumAttempts))
         
         let op = UnlimitedOperation(waitTime: waitTime, maximumAttempts: maximumAttempts)
         
@@ -79,22 +79,22 @@ class RetryableAsynchronousOperationTest: XCTestCase {
         
         expect(op.promise.isResolved).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * totalWaitTime)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isFulfilled).toNotEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * totalWaitTime)
+            timeout: expectationsWaitTime
         )
         
         expect(op.promise.isRejected).toEventually(
             beTrue(),
-            timeout: TimeInterval(UInt32(2000) * totalWaitTime)
+            timeout: expectationsWaitTime
         )
         
         expect(op.result?.error).toEventually(
             matchError(BaseRetryableOperationError.ReachedRetryLimit),
-            timeout: TimeInterval(UInt32(2000) * totalWaitTime)
+            timeout: expectationsWaitTime
         )
         
     }
