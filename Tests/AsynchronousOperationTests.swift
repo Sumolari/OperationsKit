@@ -508,8 +508,8 @@ class AsynchronousOperationTests: XCTestCase {
         let queue = self.queue()
         queue.isSuspended = true
         queue.addOperation(op)
-        queue.isSuspended = false
         op.cancel()
+        queue.isSuspended = false
 
         // Operation must be cancelled, eventually.
         expect(op.isCancelled).toEventually(beTrue())
