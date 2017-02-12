@@ -284,6 +284,58 @@ class AsynchronousOperationTests: XCTestCase {
     }
     
     /**
+     Tests that a simple asynchronous operation properly handle its children
+     operations's failure.
+     */
+    func test__operation_children_fail() {
+        
+        let queue = self.queue()
+        
+        let expectedError = BaseOperationError.Cancelled
+        
+        let parentOp = OperationWithChild(queue: queue)
+        let childOp = parentOp.childOperation
+        
+        queue.addOperation(parentOp)
+        
+        // The parent operation must not be executing, eventually.
+        expect(parentOp.isExecuting).toEventually(beFalse())
+        // The parent operation must be finished, eventually.
+        expect(parentOp.isFinished).toEventually(beTrue())
+        // The parent operation must not be resolved, eventually.
+        expect(parentOp.promise.isResolved).toEventually(beFalse())
+        // The parent operation result must be nil, eventually.
+        expect(parentOp.result).toEventually(beNil())
+        // The parent operation status must be finishing, eventually.
+        expect(parentOp.status).toEventually(equal(OperationStatus.finishing))
+        // The child operation must be executing, eventually.
+        expect(childOp.isExecuting).toEventually(beTrue())
+        // The child operation must not be resolved, eventually.
+        expect(childOp.promise.isResolved).toEventually(beFalse())
+        // The child operation result must be nil, eventually.
+        expect(childOp.result).toEventually(beNil())
+        // The child operation status must be executing, eventually.
+        expect(childOp.status).toEventually(equal(OperationStatus.executing))
+        // We cancel child operation.
+        childOp.cancel()
+        // The parent operation must be finished, eventually.
+        expect(parentOp.isFinished).toEventually(beTrue())
+        // The parent operation must be resolved, eventually.
+        expect(parentOp.promise.isResolved).toEventually(beTrue())
+        // The parent operation must not be fulfilled, eventually.
+        expect(parentOp.promise.isFulfilled).toNotEventually(beTrue())
+        // The parent operation must be rejected, eventually.
+        expect(parentOp.promise.isRejected).toEventually(beTrue())
+        // The parent operation must be rejected with expected error, eventually.
+        expect(parentOp.promise.error).toEventually(matchError(expectedError))
+        // The parent operation result value must be expected error, too.
+        expect(parentOp.result?.error).toEventually(matchError(expectedError))
+        // The parent operation enqueued status must be finished, eventually.
+        expect(parentOp.status).toEventually(equal(OperationStatus.finished))
+        
+    }
+    
+    /**
      Tests that a simple asynchronous operation properly forwards an external 
      progress.
      */
