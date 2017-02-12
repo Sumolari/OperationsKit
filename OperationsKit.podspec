@@ -1,23 +1,27 @@
 Pod::Spec.new do |s|
 
   s.name         = "OperationsKit"
-  s.version      = "0.0.3"
-  s.summary      = "PromiseKit extension for OperationsQueue."
+  s.version      = "0.1.0"
+  s.summary      = "Operation subclasses offering a promise-based interface."
 
-  # This description is used to generate tags and improve search results.
-  #   * Think: What does it do? Why did you write it? What is the focus?
-  #   * Try to keep it short, snappy and to the point.
-  #   * Write the description between the DESC delimiters below.
-  #   * Finally, don't worry about the indent, CocoaPods strips it!
   s.description  = <<-DESC
-  `OperationsKit` is a collection of utilities built on top of `PromiseKit`
-  designed to make working with operation queues easier.
+  `OperationsKit` is a collection of `Operation` subclasses which offer a
+  promise-based interface to chain results, built on top of `PromiseKit`.
+
+  Its main focus is to offer an easy to use, promise-based approach to work
+  with heavy operations, giving users additional methods to spawn children
+  operations without deadlocking the system and tracking operation's progress.
 
   Main features are:
 
-  - `NSOperation` subclass for `PromiseKit`-based asynchronous operation.
-  - Smart concurrency limits based on memory usage.
-  - Convenience method to run collection of blocks in parallel.
+  - `Operation` subclasses for `PromiseKit`-based asynchronous operation.
+  - Ready-to-use retryable operation for those situation when a recoverable
+  error may arise.
+  - Subclasses to wrap blocks returning promises in `Operation`s.
+  - Convenience method to wait for children operations without blocking parent's
+  queue.
+  - Built-in progress to track asynchronous operation status.
+  - Extensive code coverage.
                    DESC
 
   s.homepage = "https://github.com/Sumolari/OperationsKit"
