@@ -31,6 +31,7 @@ class BlockBasedAsynchronousOperationTests: XCTestCase {
         // Put setup code here.
         // This method is called before the invocation of each test method in
         // the class.
+        Nimble.AsyncDefaults.Timeout = 10
     }
     
     override func tearDown() {
@@ -569,7 +570,7 @@ class BlockBasedAsynchronousOperationTests: XCTestCase {
             // Operation's progress completed unit count must be expected one.
             expect(op.progress.completedUnitCount).toEventually(
                 equal(expectedProgress),
-                timeout: 5
+                timeout: 10
             )
             // Operation's progress fraction must be close to expected one.
             expect(op.progress.fractionCompleted).toEventually(
@@ -612,8 +613,7 @@ class BlockBasedAsynchronousOperationTests: XCTestCase {
             // Forwarding progress may take a little bit so we must wait for it.
             // Operation's progress completed unit count must be expected one.
             expect(op.progress.completedUnitCount).toEventually(
-                equal(expectedProgress),
-                timeout: 2
+                equal(expectedProgress)
             )
             // Operation's progress fraction must be close to expected one.
             expect(op.progress.fractionCompleted).toEventually(
@@ -666,8 +666,7 @@ class BlockBasedAsynchronousOperationTests: XCTestCase {
             // Forwarding progress may take a little bit so we must wait for it.
             // Operation's progress completed unit count must be expected one.
             expect(op.progress.completedUnitCount).toEventually(
-                equal(expectedProgress),
-                timeout: 2
+                equal(expectedProgress)
             )
             // Operation's progress fraction must be close to expected one.
             expect(op.progress.fractionCompleted).toEventually(
@@ -721,8 +720,7 @@ class BlockBasedAsynchronousOperationTests: XCTestCase {
             // Forwarding progress may take a little bit so we must wait for it.
             // Operation's progress completed unit count must be expected one.
             expect(op.progress.completedUnitCount).toEventually(
-                equal(expectedProgress),
-                timeout: 2
+                equal(expectedProgress)
             )
             // Operation's progress fraction must be close to expected one.
             expect(op.progress.fractionCompleted).toEventually(
