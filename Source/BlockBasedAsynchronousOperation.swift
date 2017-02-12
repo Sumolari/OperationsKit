@@ -8,6 +8,7 @@
 
 import Foundation
 import PromiseKit
+import ReactiveSwift
 import ReactiveCocoa
 
 /**
@@ -41,25 +42,20 @@ where ExecutionError: OperationError {
             
             let progressAndPromise = block()
             
-            let progress = self.progress
+            self.progress.totalUnitCount =
+                progressAndPromise.progress.totalUnitCount
+            self.progress.completedUnitCount =
+                progressAndPromise.progress.completedUnitCount
             
-            progress.totalUnitCount = progressAndPromise.progress.totalUnitCount
+            self.progress.reactive.totalUnitCount <~ progressAndPromise.progress
+                .reactive.values(forKeyPath: "totalUnitCount")
+                .map { $0 as? Int64 }
+                .skipNil()
             
-            progressAndPromise.progress.reactive
-                .values(forKeyPath: "completedUnitCount")
-                .start { [weak progress] event in
-                    
-                    guard let p = progress else { return }
-                    
-                    switch event {
-                    case .value(let optionalValue):
-                        guard let value = optionalValue as? Int64 else { return }
-                        p.completedUnitCount = value
-                    case .completed, .failed, .interrupted:
-                        p.completedUnitCount = p.totalUnitCount
-                    }
-                    
-                }
+            self.progress.reactive.completedUnitCount <~ progressAndPromise
+                .progress.reactive.values(forKeyPath: "completedUnitCount")
+                .map { $0 as? Int64 }
+                .skipNil()
             
             return progressAndPromise.promise
         }
