@@ -25,6 +25,7 @@ before_install:
 install:
   - cd Tests
   - pod install
+  - gem install xcpretty-travis-formatter
 
 before_script:
   - xcodebuild -version
@@ -32,10 +33,9 @@ before_script:
   - xcodebuild -workspace "$WORKSPACE" -list
 
 script:
-  - set -o pipefail
 
   # Build Framework in Debug and Run Tests
-  - xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -sdk "$SDK" -destination "$DESTINATION" -configuration Debug ONLY_ACTIVE_ARCH=NO test | xcpretty -c;
+  - set -o pipefail && xcodebuild -workspace "$WORKSPACE" -scheme "$SCHEME" -sdk "$SDK" -destination "$DESTINATION" -configuration Debug ONLY_ACTIVE_ARCH=NO test | tee xcodebuild.log | xcpretty -c -f `xcpretty-travis-formatter`;
 
   # Run `pod lib lint` if specified
   - if [ $POD_LINT == "YES" ]; then
