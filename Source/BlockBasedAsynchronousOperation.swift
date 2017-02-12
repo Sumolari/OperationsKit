@@ -9,7 +9,6 @@
 import Foundation
 import PromiseKit
 import ReactiveSwift
-import ReactiveCocoa
 
 /**
  An `BlockBasedAsynchronousOperation` is a subclass of `AsynchronousOperation` 

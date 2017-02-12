@@ -8,6 +8,7 @@
 
 import Foundation
 import PromiseKit
+import ReactiveSwift
 
 /**
  A `BlockBasedRetryableAsynchronousOperation` is a subclass of 
@@ -38,7 +39,7 @@ where ExecutionError: RetryableOperationError {
         maximumAttempts: UInt64 = 1,
         block: @escaping (Void) -> ProgressAndPromise<ReturnType>
     ) {
-        super.init()
+        super.init(maximumAttempts: maximumAttempts)
         self.block = { [unowned self] in
             
             let progressAndPromise = block()

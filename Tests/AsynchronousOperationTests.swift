@@ -36,7 +36,8 @@ class AsynchronousOperationTests: XCTestCase {
     
     /// An operation which must be manually finished.
     class ManualOperation: AsynchronousOperation<Void, BaseOperationError> {
-        override func execute() { }
+        fileprivate(set) var timesExecuted: Int = 0
+        override func execute() { self.timesExecuted += 1 }
     }
     
     /// An operation which will spawn a child operation.
@@ -338,6 +339,9 @@ class AsynchronousOperationTests: XCTestCase {
         // Progress' completed unit count must be 0.
         expect(op.progress.completedUnitCount).to(equal(0))
         
+        // Operation must be executing, eventually.
+        expect(op.isExecuting).toEventually(beTrue())
+        
         // We finish the operation to be good citizens.
         op.finish()
         
@@ -371,6 +375,37 @@ class AsynchronousOperationTests: XCTestCase {
         
         // We finish the operation to be good citizens.
         op.cancel()
+        
+        // Progress' total unit count must be expected one.
+        expect(op.progress.totalUnitCount).to(equal(totalUnitCount))
+        // Progress' completed unit count must be expected one.
+        expect(op.progress.completedUnitCount).to(equal(totalUnitCount))
+        // Progress' fraction completed must be 1.
+        expect(op.progress.fractionCompleted).to(beCloseTo(1))
+        
+    }
+    
+    /**
+     Tests that a simple asynchronous operation properly reports its progress
+     as completed when finishes with an error.
+     */
+    func test__operation_progress_updates_when_failed() {
+        
+        let totalUnitCount: Int64 = 5
+        
+        let progress = Progress(totalUnitCount: totalUnitCount)
+        
+        let op = ManualOperation(progress: progress)
+        
+        self.queue().addOperation(op)
+        
+        // Progress' total unit count must be expected one.
+        expect(op.progress.totalUnitCount).to(equal(totalUnitCount))
+        // Progress' completed unit count must be 0.
+        expect(op.progress.completedUnitCount).to(equal(0))
+        
+        // We finish the operation with an error.
+        op.finish(error: NSError(domain: "error", code: -1, userInfo: nil))
         
         // Progress' total unit count must be expected one.
         expect(op.progress.totalUnitCount).to(equal(totalUnitCount))
@@ -470,11 +505,17 @@ class AsynchronousOperationTests: XCTestCase {
         
         let op = ManualOperation()
         
-        self.queue().addOperation(op)
-        
+        let queue = self.queue()
+        queue.isSuspended = true
+        queue.addOperation(op)
+        queue.isSuspended = false
         op.cancel()
-        op.finish()
+
+        // Operation must be cancelled, eventually.
+        expect(op.isCancelled).toEventually(beTrue())
         
+        // Operation must not be executed once.
+        expect(op.timesExecuted).toNotEventually(beGreaterThan(0))
         // Promise must resolve, eventually.
         expect(op.promise.isResolved).toEventually(beTrue())
         // Promise must not be fulfilled, ever.
@@ -504,6 +545,8 @@ class AsynchronousOperationTests: XCTestCase {
         // Just to ensure that directly calling main wont start it either.
         op.main()
         
+        // Operation must not be executed once.
+        expect(op.timesExecuted).toNotEventually(beGreaterThan(0))
         // Promise must resolve, eventually.
         expect(op.promise.isResolved).toEventually(beTrue())
         // Promise must not be fulfilled, ever.
