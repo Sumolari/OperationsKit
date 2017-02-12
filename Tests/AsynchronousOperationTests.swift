@@ -24,9 +24,6 @@ class AsynchronousOperationTests: XCTestCase {
         return queue
     }
     
-    /// Wait some ms.
-    func wait(ms: Double) { usleep(UInt32(ms * 1000.0)) }
-    
     /// An operation which finish with a constant value.
     class ConstantOperation: AsynchronousOperation<String, BaseOperationError> {
         fileprivate let constant: String
@@ -196,22 +193,20 @@ class AsynchronousOperationTests: XCTestCase {
         queue.addOperation(childOp)
         queue.addOperation(parentOp)
         
-        // Maybe we wait a ms?
-        self.wait(ms: 1)
-        // The child operation enqueued must not be ready.
-        expect(childOp.isReady).to(beFalse())
-        // The child operation enqueued must not be executing.
-        expect(childOp.isExecuting).to(beFalse())
-        // The child operation enqueued must not be resolved.
-        expect(childOp.promise.isResolved).to(beFalse())
-        // The child operation enqueued result must be nil.
-        expect(childOp.result).to(beNil())
-        // The child operation enqueued status must be pending.
-        expect(childOp.status).to(equal(OperationStatus.pending))
-        // The parent operation enqueued must be executing.
-        expect(parentOp.isExecuting).to(beTrue())
-        // The parent operation enqueued status must be executing.
-        expect(parentOp.status).to(equal(OperationStatus.executing))
+        // The child operation enqueued must not be ready, eventually.
+        expect(childOp.isReady).toEventually(beFalse())
+        // The child operation enqueued must not be executing, eventually.
+        expect(childOp.isExecuting).toEventually(beFalse())
+        // The child operation enqueued must not be resolved, eventually.
+        expect(childOp.promise.isResolved).toEventually(beFalse())
+        // The child operation enqueued result must be nil, eventually.
+        expect(childOp.result).toEventually(beNil())
+        // The child operation enqueued status must be pending, eventually.
+        expect(childOp.status).toEventually(equal(OperationStatus.pending))
+        // The parent operation enqueued must be executing, eventually.
+        expect(parentOp.isExecuting).toEventually(beTrue())
+        // The parent operation enqueued status must be executing, eventually.
+        expect(parentOp.status).toEventually(equal(OperationStatus.executing))
         // We pause the queue.
         queue.isSuspended = true
         // We finish the parent operation.
@@ -228,16 +223,14 @@ class AsynchronousOperationTests: XCTestCase {
         expect(childOp.status).to(equal(OperationStatus.ready))
         // We resume the queue.
         queue.isSuspended = false
-        // Maybe we wait a ms?
-        self.wait(ms: 1)
-        // The child operation enqueued must be executing.
-        expect(childOp.isExecuting).to(beTrue())
-        // The child operation enqueued must not be resolved.
-        expect(childOp.promise.isResolved).to(beFalse())
-        // The child operation enqueued result must be nil.
-        expect(childOp.result).to(beNil())
-        // The child operation enqueued status must be executing.
-        expect(childOp.status).to(equal(OperationStatus.executing))
+        // The child operation enqueued must be executing, eventually.
+        expect(childOp.isExecuting).toEventually(beTrue())
+        // The child operation enqueued must not be resolved, eventually.
+        expect(childOp.promise.isResolved).toEventually(beFalse())
+        // The child operation enqueued result must be nil, eventually.
+        expect(childOp.result).toEventually(beNil())
+        // The child operation enqueued status must be executing, eventually.
+        expect(childOp.status).toEventually(equal(OperationStatus.executing))
         // We finish the child operation, to clean up a little bit.
         childOp.finish()
         
@@ -545,14 +538,10 @@ class AsynchronousOperationTests: XCTestCase {
         
         queue.addOperation(op)
         
-        // Maybe we wait a ms?
-        self.wait(ms: 1)
         // We store start date.
         let startDate = Date()
-        // Operation has start date.
-        expect(op.startDate).toNot(beNil())
-        // Operation start date is similar to expected one.
-        expect(op.startDate?.timeIntervalSince1970).to(
+        // Operation start date is similar to expected one, eventually.
+        expect(op.startDate?.timeIntervalSince1970).toEventually(
             beCloseTo(startDate.timeIntervalSince1970, within: 1)
         )
         // Operation has no end date yet.
