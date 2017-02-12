@@ -21,8 +21,14 @@ public protocol OperationError: Swift.Error {
     /// The operation was cancelled.
     static var Cancelled: Self { get }
     
-    /// The operation failed due to an unknown error.
-    static var Unknown: Self { get }
+    /**
+     Error to be returned when the operation failes with given unknown error.
+     
+     - parameter error: Unknown error which made the operation fail.
+     
+     - returns: Properly wrapped known error.
+     */
+    static func Unknown(_ error: Swift.Error) -> Self
     
     /**
      Wraps given error, returning an instance of this type if original error
@@ -39,7 +45,7 @@ public protocol OperationError: Swift.Error {
 extension OperationError {
     
     public static func wrap(_ error: Swift.Error) -> Self {
-        guard let knownError = error as? Self else { return Self.Unknown }
+        guard let knownError = error as? Self else { return Self.Unknown(error) }
         return knownError
     }
     
@@ -51,15 +57,17 @@ extension OperationError {
  Common errors that may be throw by any kind of asynchronous operation.
  
  - canceled: The operation was cancelled.
- - unknown:  The operation failed due to an unknown error.
+ - unknown:  The operation failed due to given unknown error.
  */
 public enum BaseOperationError: OperationError {
     
     public static var Cancelled: BaseOperationError { return .cancelled }
-    public static var Unknown: BaseOperationError { return .unknown }
+    public static func Unknown(_ error: Swift.Error) -> BaseOperationError {
+        return .unknown(error)
+    }
 
     case cancelled
-    case unknown
+    case unknown(Swift.Error)
     
 }
 
@@ -270,6 +278,7 @@ where ExecutionError: OperationError {
      - parameter returnValue: Value to be used to fulfill promise.
      */
     fileprivate func _finish(_ returnValue: ReturnType) {
+        self.progress.completedUnitCount = self.progress.totalUnitCount
         self.result = .success(returnValue)
         self.fulfillPromise(returnValue)
     }
@@ -298,9 +307,11 @@ where ExecutionError: OperationError {
      
      - parameter error: Error to be thrown back.
      */
-    fileprivate func _finish(error: ExecutionError) {
-        self.result = .failure(error)
-        self.rejectPromise(error)
+    fileprivate func _finish(error: Swift.Error) {
+        self.progress.completedUnitCount = self.progress.totalUnitCount
+        let wrappedError = ExecutionError.wrap(error)
+        self.result = .failure(wrappedError)
+        self.rejectPromise(wrappedError)
     }
     
     /**
@@ -312,7 +323,7 @@ where ExecutionError: OperationError {
      
      - parameter error: Error to be thrown back.
      */
-    open func finish(error: ExecutionError) {
+    open func finish(error: Swift.Error) {
         if self.moveToFinishing() {
             self._finish(error: error)
         }
@@ -337,7 +348,7 @@ where ExecutionError: OperationError {
         if self.moveToFinishing() {
             promise
                 .then { self._finish($0) }
-                .catch { self._finish(error: ExecutionError.wrap($0)) }
+                .catch { self._finish(error: $0) }
         }
     }
     

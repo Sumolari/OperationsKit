@@ -33,8 +33,8 @@ public enum BaseRetryableOperationError: RetryableOperationError {
         return .cancelled
     }
     
-    public static var Unknown: BaseRetryableOperationError {
-        return .unknown
+    public static func Unknown(_ error: Swift.Error) -> BaseRetryableOperationError {
+        return .unknown(error)
     }
     
     public static var ReachedRetryLimit: BaseRetryableOperationError {
@@ -42,7 +42,7 @@ public enum BaseRetryableOperationError: RetryableOperationError {
     }
     
     case cancelled
-    case unknown
+    case unknown(Swift.Error)
     case reachedRetryLimit
     
 }
@@ -87,7 +87,7 @@ where ExecutionError: RetryableOperationError {
      - parameter error: Recoverable error that was throw. When not `nil` and 
      maximum attempts are reached this is the error that will be passed back.
      */
-    open func retry(dueTo error: ExecutionError? = nil) {
+    open func retry(dueTo error: Swift.Error? = nil) {
         
         guard !self.isCancelled else { return }
         

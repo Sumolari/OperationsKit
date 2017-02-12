@@ -59,16 +59,28 @@ class AsynchronousOperationTests: XCTestCase {
     
     enum FailedOperationError: OperationError {
         static var Cancelled: FailedOperationError { return .cancelled }
-        static var Unknown: FailedOperationError { return .unknown }
+        static func Unknown(_ error: Swift.Error) -> FailedOperationError {
+            return .unknown(error)
+        }
         case cancelled
-        case unknown
+        case unknown(Swift.Error)
         case expected
     }
     
     /// An operation which fail with a constant error.
     class FailedOperation: AsynchronousOperation<Void, FailedOperationError> {
-        fileprivate let constant: FailedOperationError
-        init(error: FailedOperationError) {
+        fileprivate let constant: Swift.Error
+        init(error: Swift.Error) {
+            self.constant = error
+            super.init()
+        }
+        override func execute() { self.finish(error: self.constant) }
+    }
+    
+    /// An operation which fail with a constant `BaseOperationError`.
+    class FailedBaseOperation: AsynchronousOperation<Void, BaseOperationError> {
+        fileprivate let constant: Swift.Error
+        init(error: Swift.Error) {
             self.constant = error
             super.init()
         }
@@ -278,6 +290,105 @@ class AsynchronousOperationTests: XCTestCase {
     }
     
     /**
+     Tests that a simple asynchronous operation properly forwards an external 
+     progress.
+     */
+    func test__operation_external_progress() {
+        
+        let totalUnitCount: Int64 = 5
+        
+        let progress = Progress(totalUnitCount: totalUnitCount)
+        
+        let op = ManualOperation(progress: progress)
+        
+        self.queue().addOperation(op)
+        
+        // Progress' total unit count must be expected one.
+        expect(op.progress.totalUnitCount).to(equal(totalUnitCount))
+        // Progress' completed unit count must be 0.
+        expect(op.progress.completedUnitCount).to(equal(0))
+        
+        for currentCount in 0..<totalUnitCount {
+            // Progress' total unit count must be expected one.
+            expect(op.progress.totalUnitCount).to(equal(totalUnitCount))
+            // Progress' completed unit count must be expected one.
+            expect(op.progress.completedUnitCount).to(equal(currentCount))
+            // Progress' fraction completed must be close to expected one.
+            expect(op.progress.fractionCompleted).to(
+                beCloseTo(Double(currentCount) / Double(totalUnitCount))
+            )
+            // We increase completed unit count.
+            progress.completedUnitCount += 1
+        }
+        
+        // We finish the operation to be good citizens.
+        op.finish()
+        
+    }
+    
+    /**
+     Tests that a simple asynchronous operation properly reports its progress
+     as completed when finishes.
+     */
+    func test__operation_progress_updates_when_finished() {
+        
+        let totalUnitCount: Int64 = 5
+        
+        let progress = Progress(totalUnitCount: totalUnitCount)
+        
+        let op = ManualOperation(progress: progress)
+        
+        self.queue().addOperation(op)
+        
+        // Progress' total unit count must be expected one.
+        expect(op.progress.totalUnitCount).to(equal(totalUnitCount))
+        // Progress' completed unit count must be 0.
+        expect(op.progress.completedUnitCount).to(equal(0))
+        
+        // We finish the operation to be good citizens.
+        op.finish()
+        
+        // Progress' total unit count must be expected one.
+        expect(op.progress.totalUnitCount).to(equal(totalUnitCount))
+        // Progress' completed unit count must be expected one.
+        expect(op.progress.completedUnitCount).to(equal(totalUnitCount))
+        // Progress' fraction completed must be 1.
+        expect(op.progress.fractionCompleted).to(beCloseTo(1))
+        
+    }
+    
+    /**
+     Tests that a simple asynchronous operation properly reports its progress
+     as completed when cancelled.
+     */
+    func test__operation_progress_updates_when_cancelled() {
+        
+        let totalUnitCount: Int64 = 5
+        
+        let progress = Progress(totalUnitCount: totalUnitCount)
+        
+        let op = ManualOperation(progress: progress)
+        
+        self.queue().addOperation(op)
+        
+        // Progress' total unit count must be expected one.
+        expect(op.progress.totalUnitCount).to(equal(totalUnitCount))
+        // Progress' completed unit count must be 0.
+        expect(op.progress.completedUnitCount).to(equal(0))
+        
+        // We finish the operation to be good citizens.
+        op.cancel()
+        
+        // Progress' total unit count must be expected one.
+        expect(op.progress.totalUnitCount).to(equal(totalUnitCount))
+        // Progress' completed unit count must be expected one.
+        expect(op.progress.completedUnitCount).to(equal(totalUnitCount))
+        // Progress' fraction completed must be 1.
+        expect(op.progress.fractionCompleted).to(beCloseTo(1))
+        
+    }
+    
+    /**
      Tests that a simple asynchronous operation properly fails and returns its
      error.
      */
@@ -305,6 +416,59 @@ class AsynchronousOperationTests: XCTestCase {
     }
     
     /**
+     Tests that a simple asynchronous operation with a generic NSError properly 
+     fails wrapping the error in an unknown error.
+     */
+    func test__result_fail_generic_error() {
+        
+        let expectedError = NSError(domain: "error", code: -1, userInfo: nil)
+        
+        let op = FailedBaseOperation(error: expectedError)
+        
+        self.queue().addOperation(op)
+        
+        // Promise must resolve, eventually.
+        expect(op.promise.isResolved).toEventually(beTrue())
+        // Promise must not be fulfilled, ever.
+        expect(op.promise.isFulfilled).toNotEventually(beTrue())
+        // Promise must be rejected, eventually.
+        expect(op.promise.isRejected).toEventually(beTrue())
+        
+        // Promise must be rejected with expected error...
+        // - Promise must be rejected with a `BaseOperationError` error...
+        expect(op.isFinished).toEventually(beTrue()) // Wait until finishes...
+        if let promiseError = op.promise.error as? BaseOperationError {
+            // - Error must be `unknown`...
+            switch promiseError {
+            case .unknown(let underlyingError):
+                // - Underlying error must match expected `NSError`...
+                expect(underlyingError).to(matchError(expectedError))
+            default:
+                XCTFail("Promise error must be `unknown`")
+            }
+        } else {
+            XCTFail("Promise error must be a `BaseOperationError` instance")
+        }
+        // Operation's result must be the expected error, too...
+        if let error = op.result?.error {
+            // - Error must be `unknown`...
+            switch error {
+            case .unknown(let underlyingError):
+                // - Underlying error must match expected `NSError`...
+                expect(underlyingError).to(matchError(expectedError))
+            default:
+                XCTFail("Result error must be `unknown`")
+            }
+        } else {
+            XCTFail("Result error must be a `BaseOperationError` instance")
+        }
+        
+        // Operation enqueued status must be finished, eventually.
+        expect(op.status).toEventually(equal(OperationStatus.finished))
+        
+    }
+    
+    /**
      Tests that a simple asynchronous operation is properly cancelled.
      */
     func test__result_cancelled() {
@@ -317,6 +481,35 @@ class AsynchronousOperationTests: XCTestCase {
         
         op.cancel()
         op.finish()
+        
+        // Promise must resolve, eventually.
+        expect(op.promise.isResolved).toEventually(beTrue())
+        // Promise must not be fulfilled, ever.
+        expect(op.promise.isFulfilled).toNotEventually(beTrue())
+        // Promise must be rejected, eventually.
+        expect(op.promise.isRejected).toEventually(beTrue())
+        // Promise must be rejected with expected error.
+        expect(op.promise.error).toEventually(matchError(expectedError))
+        // Operation's result must be the expected error, too.
+        expect(op.result?.error).toEventually(matchError(expectedError))
+        // Operation enqueued status must be cancelled, eventually.
+        expect(op.status).toEventually(equal(OperationStatus.cancelled))
+        
+    }
+    
+    /**
+     Tests that a simple cancelled asynchronous operation won't be started.
+     */
+    func test__operation_cancelled_wont_start() {
+        
+        let expectedError = BaseOperationError.Cancelled
+        
+        let op = ManualOperation()
+        
+        op.cancel()
+        
+        // Just to ensure that directly calling main wont start it either.
+        op.main()
         
         // Promise must resolve, eventually.
         expect(op.promise.isResolved).toEventually(beTrue())
