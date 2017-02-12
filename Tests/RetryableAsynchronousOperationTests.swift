@@ -109,6 +109,9 @@ class RetryableAsynchronousOperationTests: XCTestCase {
         
         self.queue().addOperation(op)
         
+        // Operation must be executing, eventually.
+        expect(op.isExecuting).toEventually(beTrue())
+        
         // We do this twice.
         for _ in 0..<(attempts - 1) {
             // Operation must not be finished.
