@@ -141,8 +141,8 @@ class AsynchronousOperationTests: XCTestCase {
         queue.addOperation(firstOp)
         queue.addOperation(secondOp)
         
-        // The second operation enqueued must be ready.
-        expect(secondOp.isReady).to(beTrue())
+        // The second operation enqueued must be ready, eventually.
+        expect(secondOp.isReady).toEventually(beTrue())
         // The second operation enqueued must not be executing.
         expect(secondOp.isExecuting).to(beFalse())
         // The second operation enqueued must not be resolved.
@@ -167,8 +167,8 @@ class AsynchronousOperationTests: XCTestCase {
         expect(secondOp.status).toEventually(equal(OperationStatus.executing))
         // We finish the second operation.
         secondOp.finish()
-        // The second operation enqueued must not be executing.
-        expect(secondOp.isExecuting).to(beFalse())
+        // The second operation enqueued must not be executing, eventually.
+        expect(secondOp.isExecuting).toEventually(beFalse())
         // The second operation enqueued must be resolved.
         expect(secondOp.promise.isResolved).to(beTrue())
         // The second operation enqueued result must be Void.
