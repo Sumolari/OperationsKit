@@ -10,8 +10,9 @@ import Foundation
 import PromiseKit
 
 /**
- A `RetryableAsynchronousOperation` is a subclass of `AsynchronousOperation`
- that will retry an operation until it succeeds or a limit is reached.
+ A `BlockBasedRetryableAsynchronousOperation` is a subclass of 
+ `RetryableAsynchronousOperation` that will retry an operation until it succeeds
+ or a limit is reached.
  */
 open class BlockBasedRetryableAsynchronousOperation<ReturnType, ExecutionError>:
 RetryableAsynchronousOperation<ReturnType, ExecutionError>
@@ -20,31 +21,44 @@ where ExecutionError: RetryableOperationError {
     /// Block that will be run when this operation is started.
     internal var block: ((Void) -> Promise<ReturnType>)! = nil
     
+    /**
+     Initializes this asynchronous operation with a block which will return a
+     tuple with a progress and a promise.
+     
+     - note: The block will be executed when the operation is executed by the
+     operation queue it was enqueued in and not before.
+     
+     - note: Progress will be forwarded to this operation's progress.
+     
+     - parameter maximumAttempts: Maximum amount of times block will be run
+     until giving up.
+     - parameter block: Block returning a progress and a promise.
+     */
     public init(
         maximumAttempts: UInt64 = 1,
         block: @escaping (Void) -> ProgressAndPromise<ReturnType>
     ) {
-        super.init(maximumAttempts: maximumAttempts)
-        self.block = { [weak self] in
-            
-            let progress = self?.progress
+        super.init()
+        self.block = { [unowned self] in
             
             let progressAndPromise = block()
-            progress?.totalUnitCount =
-                progressAndPromise.progress.totalUnitCount
+            
+            let progress = self.progress
+            
+            progress.totalUnitCount = progressAndPromise.progress.totalUnitCount
             
             progressAndPromise.progress.reactive
                 .values(forKeyPath: "completedUnitCount")
-                .start { event in
+                .start { [weak progress] event in
+                    
+                    guard let p = progress else { return }
                     
                     switch event {
-                    case .completed, .failed(_), .interrupted:
-                        if let cuc = progress?.totalUnitCount {
-                            progress?.completedUnitCount = cuc
-                        }
                     case .value(let optionalValue):
                         guard let value = optionalValue as? Int64 else { return }
-                        progress?.completedUnitCount = value
+                        p.completedUnitCount = value
+                    case .completed, .failed, .interrupted:
+                        p.completedUnitCount = p.totalUnitCount
                     }
                     
             }
@@ -53,32 +67,36 @@ where ExecutionError: RetryableOperationError {
         }
     }
     
+    /**
+     Initializes this asynchronous operation with a block which will return a
+     promise and an optional progress tracking the block.
+     
+     - note: The block will be executed when the operation is executed by the
+     operation queue it was enqueued in and not before.
+     
+     - parameter maximumAttempts: Maximum amount of times block will be run
+     until giving up.
+     - parameter optionalProgress: Optional progress tracking the block. If
+     `nil` operation's progress will remain the default one: a stalled progress
+     with a total count of 0 units.
+     - parameter block: Block returning a promise.
+     */
     public init(
         maximumAttempts: UInt64 = 1,
-        progress: Progress? = nil,
+        progress optionalProgress: Progress? = nil,
         block: @escaping (Void) -> Promise<ReturnType>
     ) {
         super.init(maximumAttempts: maximumAttempts)
         self.block = block
-        self.progress = progress
+        if let progress = optionalProgress {
+            self.progress = progress
+        }
     }
     
-    open override func main() {
-        
-        super.main()
-        
+    open override func execute() {
         self.block()
             .then { result -> Void in self.finish(result) }
-            .catch { _ in
-                
-                guard self.attempts <= self.maximumAttempts else {
-                    return self.finish(error: ExecutionError.ReachedRetryLimit)
-                }
-                
-                self.main()
-        
-            }
-        
+            .catch { error in self.retry(dueTo: ExecutionError.wrap(error)) }
     }
     
 }

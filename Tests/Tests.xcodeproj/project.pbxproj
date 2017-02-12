@@ -8,19 +8,14 @@
 
 /* Begin PBXBuildFile section */
 		05F82595854FB8D175D9C8C9 /* Pods_iOS_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC42E1CE67C12AB4F304A69E /* Pods_iOS_Tests.framework */; };
-		1305A1D31DFC261F00FF1C88 /* BlockBasedAsynchronousOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1305A1D21DFC261F00FF1C88 /* BlockBasedAsynchronousOperationTest.swift */; };
 		1305A1D41DFC261F00FF1C88 /* BlockBasedAsynchronousOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1305A1D21DFC261F00FF1C88 /* BlockBasedAsynchronousOperationTest.swift */; };
 		1305A1E31DFC62BD00FF1C88 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1305A1E21DFC62BD00FF1C88 /* Info.plist */; };
 		1305A1E51DFC62C600FF1C88 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1305A1E41DFC62C600FF1C88 /* Info.plist */; };
-		1308D5061E4E1E9900FF6D2D /* RecursionTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1308D5051E4E1E9900FF6D2D /* RecursionTest.swift */; };
+		1305CAD11E505A7900263AEC /* AsynchronousOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1305CAD01E505A7900263AEC /* AsynchronousOperationTests.swift */; };
 		1308D5071E4E1E9900FF6D2D /* RecursionTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1308D5051E4E1E9900FF6D2D /* RecursionTest.swift */; };
-		13907C2C1E4E388B005B4583 /* BaseImplementationsTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13907C2B1E4E388B005B4583 /* BaseImplementationsTest.swift */; };
 		13907C2D1E4E388B005B4583 /* BaseImplementationsTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13907C2B1E4E388B005B4583 /* BaseImplementationsTest.swift */; };
-		13907C2F1E4E4416005B4583 /* SimpleOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13907C2E1E4E4416005B4583 /* SimpleOperationTest.swift */; };
 		13907C301E4E4416005B4583 /* SimpleOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13907C2E1E4E4416005B4583 /* SimpleOperationTest.swift */; };
-		13907C321E4E5505005B4583 /* RetryableAsynchronousOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13907C311E4E5505005B4583 /* RetryableAsynchronousOperationTest.swift */; };
 		13907C331E4E5505005B4583 /* RetryableAsynchronousOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13907C311E4E5505005B4583 /* RetryableAsynchronousOperationTest.swift */; };
-		13C26AD31DFD21A2004CC79D /* BlockBasedRetryableAsynchronousOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C26AD21DFD21A2004CC79D /* BlockBasedRetryableAsynchronousOperationTest.swift */; };
 		13C26AD41DFD21A2004CC79D /* BlockBasedRetryableAsynchronousOperationTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13C26AD21DFD21A2004CC79D /* BlockBasedRetryableAsynchronousOperationTest.swift */; };
 		F0276A6E203F3EDD38AA1570 /* Pods_macOS_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1D9A0488F2DD58D980E11C47 /* Pods_macOS_Tests.framework */; };
 /* End PBXBuildFile section */
@@ -33,6 +28,7 @@
 		1305A1D21DFC261F00FF1C88 /* BlockBasedAsynchronousOperationTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BlockBasedAsynchronousOperationTest.swift; sourceTree = "<group>"; };
 		1305A1E21DFC62BD00FF1C88 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = iOS/Info.plist; sourceTree = "<group>"; };
 		1305A1E41DFC62C600FF1C88 /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = macOS/Info.plist; sourceTree = "<group>"; };
+		1305CAD01E505A7900263AEC /* AsynchronousOperationTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AsynchronousOperationTests.swift; sourceTree = "<group>"; };
 		1308D5051E4E1E9900FF6D2D /* RecursionTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecursionTest.swift; sourceTree = "<group>"; };
 		13907C2B1E4E388B005B4583 /* BaseImplementationsTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BaseImplementationsTest.swift; sourceTree = "<group>"; };
 		13907C2E1E4E4416005B4583 /* SimpleOperationTest.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SimpleOperationTest.swift; sourceTree = "<group>"; };
@@ -89,6 +85,7 @@
 			isa = PBXGroup;
 			children = (
 				13C26AD21DFD21A2004CC79D /* BlockBasedRetryableAsynchronousOperationTest.swift */,
+				1305CAD01E505A7900263AEC /* AsynchronousOperationTests.swift */,
 				1305A1D21DFC261F00FF1C88 /* BlockBasedAsynchronousOperationTest.swift */,
 				1308D5051E4E1E9900FF6D2D /* RecursionTest.swift */,
 				13907C2B1E4E388B005B4583 /* BaseImplementationsTest.swift */,
@@ -339,12 +336,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				13907C2C1E4E388B005B4583 /* BaseImplementationsTest.swift in Sources */,
-				1305A1D31DFC261F00FF1C88 /* BlockBasedAsynchronousOperationTest.swift in Sources */,
-				13C26AD31DFD21A2004CC79D /* BlockBasedRetryableAsynchronousOperationTest.swift in Sources */,
-				1308D5061E4E1E9900FF6D2D /* RecursionTest.swift in Sources */,
-				13907C321E4E5505005B4583 /* RetryableAsynchronousOperationTest.swift in Sources */,
-				13907C2F1E4E4416005B4583 /* SimpleOperationTest.swift in Sources */,
+				1305CAD11E505A7900263AEC /* AsynchronousOperationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

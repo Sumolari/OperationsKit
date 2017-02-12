@@ -49,9 +49,13 @@ public enum BaseRetryableOperationError: RetryableOperationError {
 
 /**
  A `RetryableAsynchronousOperation` is a subclass of `AsynchronousOperation` 
- that will retry an operation until it succeeds or a limit is reached.
+ that will retry the operation until it succeeds or a limit is reached.
+ 
+ Your `execute()` method should call `retry(dueTo:)` method when a recoverable
+ error is thrown.
  */
-open class RetryableAsynchronousOperation<ReturnType, ExecutionError>: AsynchronousOperation<ReturnType, ExecutionError>
+open class RetryableAsynchronousOperation<ReturnType, ExecutionError>:
+AsynchronousOperation<ReturnType, ExecutionError>
 where ExecutionError: RetryableOperationError {
 
     /// Maximum amount of times the operation will be retried before giving up.
@@ -65,15 +69,35 @@ where ExecutionError: RetryableOperationError {
         super.init()
     }
     
-    open override func main() {
+    /**
+     Retries this operation. Your subclasss must call this method when a 
+     recoverable error arises.
+     
+     - warning: Do not call `execute()` inside `execute()` method as it might
+     cause an infinite recursion loop. Call `retry()` method instead.
+     
+     - note: This method will take into account `isCancelled` attribute, 
+     finishing the operation when it might be retried but was manually 
+     cancelled.
+     
+     - note: When no `error` is given or giving `nil` if this operation reaches
+     its maximum attempts count a `ExecutionError.ReachedRetryLimit` will be
+     passed back.
+     
+     - parameter error: Recoverable error that was throw. When not `nil` and 
+     maximum attempts are reached this is the error that will be passed back.
+     */
+    open func retry(dueTo error: ExecutionError? = nil) {
         
-        super.main()
+        guard !self.isCancelled else { return }
         
-        guard self.attempts <= self.maximumAttempts else {
-            return self.finish(error: ExecutionError.ReachedRetryLimit)
+        guard self.attempts < self.maximumAttempts else {
+            return self.finish(error: error ?? ExecutionError.ReachedRetryLimit)
         }
         
         self.attempts += 1
+        
+        self.execute()
         
     }
     

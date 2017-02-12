@@ -11,6 +11,8 @@ import PromiseKit
 import ReactiveCocoa
 import enum Result.Result
 
+// MARK: - Protocols
+
 /**
  Common errors that may be throw by any kind of asynchronous operation.
  */
@@ -43,6 +45,8 @@ extension OperationError {
     
 }
 
+// MARK: - Base errors
+
 /**
  Common errors that may be throw by any kind of asynchronous operation.
  
@@ -59,21 +63,42 @@ public enum BaseOperationError: OperationError {
     
 }
 
+// MARK: - Status
+
 /**
- An `AsynchronousOperation` is a subclass of `NSOperation` wrapping a promise
+ Possible states in which an operation can be.
+ 
+ - pending: Operation is waiting for some dependencies to finish before it can
+ be started.
+ - ready: Operation is ready to be executed but is not running yet.
+ - executing: Operation is currently being executed.
+ - cancelled: Operation was cancelled and it isn't running any more.
+ - finishing: Operation was executed successfully but children operations are
+ running and must finish before this operation can fulfill its promise.
+ - finished: Operation and its children finished.
+ */
+public enum OperationStatus {
+    case pending
+    case ready
+    case executing
+    case cancelled
+    case finishing
+    case finished
+}
+
+// MARK: - Base asynchronous operation
+
+/**
+ An `AsynchronousOperation` is a subclass of `Operation` wrapping a promise 
  based asynchronous operation.
- 
- Instances of this class are initialized given a block that takes no parameters
- and returns a promise. When the promise is resolved the operation is finished.
- 
- Instances of this class have getters to retrieve the underlying promise which
- is wrapped in an additional promise to allow cancellation.
  */
 open class AsynchronousOperation<ReturnType, ExecutionError>: Operation
 where ExecutionError: OperationError {
     
-    /// Progress of this operation, optional.
-    open internal(set) var progress: Progress? = nil
+    // MARK: Attributes
+    
+    /// Progress of this operation.
+    open internal(set) var progress = Progress(totalUnitCount: 0)
     
     /// Promise wrapping underlying promise returned by block.
     open fileprivate(set) var promise: Promise<ReturnType>! = nil
@@ -103,6 +128,16 @@ where ExecutionError: OperationError {
     open var executionDuration: TimeInterval? {
         guard let start = self.startDate else { return nil }
         return self.endDate?.timeIntervalSince(start)
+    }
+    
+    /// Current status of this operation.
+    open var status: OperationStatus {
+        guard self.isReady else { return .pending }
+        guard self.isExecuting || self.isFinished else { return .ready }
+        if self.isExecuting { return .executing }
+        if self.isCancelled { return .cancelled }
+        if self.promise.isResolved { return .finished }
+        return .finishing
     }
     
     /**
@@ -171,9 +206,13 @@ where ExecutionError: OperationError {
         }
     }
     
+    open override var isConcurrent: Bool { return true }
+    open override var isAsynchronous: Bool { return true }
+    
+    // MARK: Constructors
+    
     public override init() {
         super.init()
-        self.progress = Progress(totalUnitCount: 1)
         self.promise = Promise<ReturnType>() {
             [unowned self] fullfill, reject in
             self.fulfillPromise = fullfill
@@ -181,7 +220,8 @@ where ExecutionError: OperationError {
         }
     }
     
-    public init(progress: Progress? = nil) {
+    /// Initializes this operation with given progress.
+    public init(progress: Progress) {
         super.init()
         self.progress = progress
         self.promise = Promise<ReturnType>() {
@@ -191,64 +231,129 @@ where ExecutionError: OperationError {
         }
     }
     
+    // MARK: Status-change methods
+    
+    /// Do not override this method. You must override `execute` method instead.
     open override func main() {
+        guard !self.isCancelled else { return }
         self.isExecuting = true
+        self.execute()
     }
     
     open override func cancel() {
         super.cancel()
-        self.markAsFinished()
-        self.rejectPromise(ExecutionError.Cancelled)
-    }
-    
-    /// Changes internal state to reflect that this operation has either 
-    /// finished or been cancelled but does not resolve underlying promise.
-    public func markAsFinished() {
         self.isExecuting = false
         self.isFinished = true
+        self._finish(error: ExecutionError.Cancelled)
     }
     
     /**
-     You should call this method when your operation successfully finishes.
+     Changes internal state to reflect that this operation has finished its own
+     execution but does not resolve underlying promise, leaving the operation in
+     the `finishing` state.
      
-     - note: Changes internal state to reflect that his operation has been 
-     finished and fulfills underlying promise, returning given value back to 
-     chained ones.
+     - returns: `false` if operation was previously cancelled.
+     */
+    fileprivate func moveToFinishing() -> Bool {
+        guard !self.isCancelled else { return false }
+        self.isExecuting = false
+        self.isFinished = true
+        return true
+    }
+    
+    /**
+     Successfully finishes this operation regardless its cancellation state.
+     
+     - warning: Will ignore `isCancelled` attribute, potentially fulfilling an
+     already rejected promise.
      
      - parameter returnValue: Value to be used to fulfill promise.
      */
-    public func finish(_ returnValue: ReturnType) {
-        guard !self.isCancelled else { return }
-        self.markAsFinished()
+    fileprivate func _finish(_ returnValue: ReturnType) {
         self.result = .success(returnValue)
         self.fulfillPromise(returnValue)
     }
+
+    /**
+     You should call this method when your operation and its children operations
+     successfully.
+     
+     - note: Moves this operation to `finished` status.
+     - note: Fulfills underlying promise, passing value to chained promises.
+     
+     - parameter returnValue: Value to be used to fulfill promise.
+     */
+    open func finish(_ returnValue: ReturnType) {
+        if self.moveToFinishing() {
+            self._finish(returnValue)
+        }
+    }
     
     /**
-     You should call this method when your operation finishes with an error.
+     Finishes this operation with given error, regardless its cancellation 
+     state.
      
-     - note: Changes internal state to reflect that his operation has failed and
-     rejects underlying promise, throwing given error back to chained promises.
+     - warning: Will ignore `isCancelled` attribute, potentially rejecting an
+     already rejected promise.
      
      - parameter error: Error to be thrown back.
      */
-    public func finish(error: ExecutionError) {
-        guard !self.isCancelled else { return }
-        self.markAsFinished()
+    fileprivate func _finish(error: ExecutionError) {
         self.result = .failure(error)
         self.rejectPromise(error)
     }
     
-    open override var isConcurrent: Bool {
-        get {
-            return true
+    /**
+     You should call this method when your operation or its children operations
+     finish with an error.
+     
+     - note: Moves this operation to `finished` status.
+     - note: Rejects underlying promise, passing error to chained promises.
+     
+     - parameter error: Error to be thrown back.
+     */
+    open func finish(error: ExecutionError) {
+        if self.moveToFinishing() {
+            self._finish(error: error)
         }
     }
     
-    open override var isAsynchronous: Bool {
-        get {
-            return true
+    /**
+     Convenience method to finish this operation chaining the result of a 
+     promise, useful to avoid boilerplate when dealing with children operations.
+     
+     - note: This method will prevent deadlocks when enqueuing children 
+     operations in the same queue used to enqueue parent as will move parent
+     operation to `finishing` status, dequeuing it from queue.
+     
+     - warning: You must hold a strong reference to this operation or its promise
+     if you want to retrieve its result later on as the operation queue will
+     remove its reference.
+     
+     - parameter promise: Promise whose result will be used to finish this 
+     operation, successfully or not.
+     */
+    open func finish(forwarding promise: Promise<ReturnType>) {
+        if self.moveToFinishing() {
+            promise
+                .then { self._finish($0) }
+                .catch { self._finish(error: ExecutionError.wrap($0)) }
         }
+    }
+    
+    // MARK: Overridable methods
+    
+    /**
+     Performs task.
+     
+     - note: You must override this method in your subclasses.
+     
+     - note: You must signal execution's end using `finish()` methods family.
+     
+     - warning: Do not call `super.execute()`.
+     */
+    open func execute() {
+        fatalError("To be implemented by subclasses. You must not call `super.execute` method from a child class.")
     }
     
 }

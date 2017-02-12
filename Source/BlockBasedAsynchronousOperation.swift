@@ -11,62 +11,84 @@ import PromiseKit
 import ReactiveCocoa
 
 /**
- An `AsynchronousOperation` is a subclass of `NSOperation` wrapping a promise
- based asynchronous operation.
- 
- Instances of this class are initialized given a block that takes no parameters
- and returns a promise. When the promise is resolved the operation is finished.
+ An `BlockBasedAsynchronousOperation` is a subclass of `AsynchronousOperation` 
+ wrapping a promise-return block in an asynchronous operation.
  
  Instances of this class have getters to retrieve the underlying promise which
  is wrapped in an additional promise to allow cancellation.
  */
-open class BlockBasedAsynchronousOperation<ReturnType, ExecutionError>: AsynchronousOperation<ReturnType, ExecutionError>
+open class BlockBasedAsynchronousOperation<ReturnType, ExecutionError>:
+AsynchronousOperation<ReturnType, ExecutionError>
 where ExecutionError: OperationError {
     
     /// Block that will be run when this operation is started.
     internal var block: ((Void) -> Promise<ReturnType>)! = nil
     
+    /** 
+     Initializes this asynchronous operation with a block which will return a
+     tuple with a progress and a promise.
+     
+     - note: The block will be executed when the operation is executed by the
+     operation queue it was enqueued in and not before.
+     
+     - note: Progress will be forwarded to this operation's progress.
+     
+     - parameter block: Block returning a progress and a promise.
+     */
     public init(block: @escaping (Void) -> ProgressAndPromise<ReturnType>) {
         super.init()
-        self.block = { [weak self] in
-            
-            let progress = self?.progress
+        self.block = { [unowned self] in
             
             let progressAndPromise = block()
-            progress?.totalUnitCount =
-                progressAndPromise.progress.totalUnitCount
+            
+            let progress = self.progress
+            
+            progress.totalUnitCount = progressAndPromise.progress.totalUnitCount
             
             progressAndPromise.progress.reactive
                 .values(forKeyPath: "completedUnitCount")
-                .start { event in
+                .start { [weak progress] event in
+                    
+                    guard let p = progress else { return }
                     
                     switch event {
-                    case .completed, .failed(_), .interrupted:
-                        if let cuc = progress?.totalUnitCount {
-                            progress?.completedUnitCount = cuc
-                        }
                     case .value(let optionalValue):
                         guard let value = optionalValue as? Int64 else { return }
-                        progress?.completedUnitCount = value
+                        p.completedUnitCount = value
+                    case .completed, .failed, .interrupted:
+                        p.completedUnitCount = p.totalUnitCount
                     }
                     
-            }
+                }
             
             return progressAndPromise.promise
         }
     }
     
+    /**
+     Initializes this asynchronous operation with a block which will return a
+     promise and an optional progress tracking the block.
+     
+     - note: The block will be executed when the operation is executed by the
+     operation queue it was enqueued in and not before.
+     
+     - parameter optionalProgress: Optional progress tracking the block. If 
+     `nil` operation's progress will remain the default one: a stalled progress
+     with a total count of 0 units.
+     - parameter block: Block returning a promise.
+     */
     public init(
-        progress: Progress? = nil,
+        progress optionalProgress: Progress? = nil,
         block: @escaping (Void) -> Promise<ReturnType>
     ) {
         super.init()
         self.block = block
-        self.progress = progress
+        if let progress = optionalProgress {
+            self.progress = progress
+        }
     }
     
-    open override func main() {
-        super.main()
+    open override func execute() {
         self.block()
             .then { result -> Void in self.finish(result) }
             .catch { error in self.finish(error: ExecutionError.wrap(error)) }
