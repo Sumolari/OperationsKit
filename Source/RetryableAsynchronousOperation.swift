@@ -97,7 +97,11 @@ where ExecutionError: RetryableOperationError {
         
         self.attempts += 1
         
-        self.execute()
+        do {
+            try self.execute()
+        } catch let error {
+            self.retry(dueTo: error)
+        }
         
     }
     

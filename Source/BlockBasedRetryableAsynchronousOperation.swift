@@ -20,7 +20,7 @@ RetryableAsynchronousOperation<ReturnType, ExecutionError>
 where ExecutionError: RetryableOperationError {
     
     /// Block that will be run when this operation is started.
-    internal var block: ((Void) -> Promise<ReturnType>)! = nil
+    internal var block: ((Void) throws -> Promise<ReturnType>)! = nil
     
     /**
      Initializes this asynchronous operation with a block which will return a
@@ -37,12 +37,12 @@ where ExecutionError: RetryableOperationError {
      */
     public init(
         maximumAttempts: UInt64 = 1,
-        block: @escaping (Void) -> ProgressAndPromise<ReturnType>
+        block: @escaping (Void) throws -> ProgressAndPromise<ReturnType>
     ) {
         super.init(maximumAttempts: maximumAttempts)
         self.block = { [unowned self] in
             
-            let progressAndPromise = block()
+            let progressAndPromise = try block()
             
             self.progress.totalUnitCount =
                 progressAndPromise.progress.totalUnitCount
@@ -80,7 +80,7 @@ where ExecutionError: RetryableOperationError {
     public init(
         maximumAttempts: UInt64 = 1,
         progress optionalProgress: Progress? = nil,
-        block: @escaping (Void) -> Promise<ReturnType>
+        block: @escaping (Void) throws -> Promise<ReturnType>
     ) {
         super.init(maximumAttempts: maximumAttempts)
         self.block = block

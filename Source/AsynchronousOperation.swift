@@ -245,7 +245,11 @@ where ExecutionError: OperationError {
     open override func main() {
         guard !self.isCancelled else { return }
         self.isExecuting = true
-        self.execute()
+        do {
+            try self.execute()
+        } catch let error {
+            self.finish(error: ExecutionError.wrap(error))
+        }
     }
     
     open override func cancel() {
@@ -362,8 +366,10 @@ where ExecutionError: OperationError {
      - note: You must signal execution's end using `finish()` methods family.
      
      - warning: Do not call `super.execute()`.
+     
+     - throws: Any error throw will be catch and forwarded to `finish(error:)`.
      */
-    open func execute() {
+    open func execute() throws {
         fatalError("To be implemented by subclasses. You must not call `super.execute` method from a child class.")
     }
     

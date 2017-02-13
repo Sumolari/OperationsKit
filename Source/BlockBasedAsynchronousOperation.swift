@@ -22,7 +22,7 @@ AsynchronousOperation<ReturnType, ExecutionError>
 where ExecutionError: OperationError {
     
     /// Block that will be run when this operation is started.
-    internal var block: ((Void) -> Promise<ReturnType>)! = nil
+    internal var block: ((Void) throws -> Promise<ReturnType>)! = nil
     
     /** 
      Initializes this asynchronous operation with a block which will return a
@@ -35,11 +35,11 @@ where ExecutionError: OperationError {
      
      - parameter block: Block returning a progress and a promise.
      */
-    public init(block: @escaping (Void) -> ProgressAndPromise<ReturnType>) {
+    public init(block: @escaping (Void) throws -> ProgressAndPromise<ReturnType>) {
         super.init()
         self.block = { [unowned self] in
             
-            let progressAndPromise = block()
+            let progressAndPromise = try block()
             
             self.progress.totalUnitCount =
                 progressAndPromise.progress.totalUnitCount
@@ -74,7 +74,7 @@ where ExecutionError: OperationError {
      */
     public init(
         progress optionalProgress: Progress? = nil,
-        block: @escaping (Void) -> Promise<ReturnType>
+        block: @escaping (Void) throws -> Promise<ReturnType>
     ) {
         super.init()
         self.block = block
