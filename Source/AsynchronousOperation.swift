@@ -334,6 +334,23 @@ where ExecutionError: OperationError {
     }
     
     /**
+     Convenience method to finish this operation chaining the result of a
+     promise, useful to avoid boilerplate when dealing with children operations.
+     
+     - warning: This method won't prevent deadlocks when enqueuing children
+     operations in the same queue used to enqueue parent. If you want to prevent
+     deadlocks you must use `finish(immediatelyForwarding:)` method.
+     
+     - parameter promise: Promise whose result will be used to finish this
+     operation, successfully or not.
+     */
+    open func finish(waitingAndForwarding promise: Promise<ReturnType>) {
+        promise
+            .then { self.finish($0) }
+            .catch { self.finish(error: $0) }
+    }
+    
+    /**
      Convenience method to finish this operation chaining the result of a 
      promise, useful to avoid boilerplate when dealing with children operations.
      
@@ -348,7 +365,7 @@ where ExecutionError: OperationError {
      - parameter promise: Promise whose result will be used to finish this 
      operation, successfully or not.
      */
-    open func finish(forwarding promise: Promise<ReturnType>) {
+    open func finish(immediatelyForwarding promise: Promise<ReturnType>) {
         if self.moveToFinishing() {
             promise
                 .then { self._finish($0) }

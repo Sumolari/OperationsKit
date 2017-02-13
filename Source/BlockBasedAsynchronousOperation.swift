@@ -83,10 +83,8 @@ where ExecutionError: OperationError {
         }
     }
     
-    open override func execute() {
-        self.block()
-            .then { result -> Void in self.finish(result) }
-            .catch { error in self.finish(error: ExecutionError.wrap(error)) }
+    open override func execute() throws {
+        self.finish(waitingAndForwarding: try self.block())
     }
     
 }
