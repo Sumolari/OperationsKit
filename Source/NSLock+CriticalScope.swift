@@ -21,7 +21,7 @@ extension NSLock {
      
      - returns: Value returned by the block.
      */
-    func withCriticalScope<T>(block: (Void) -> T) -> T {
+    public func withCriticalScope<T>(block: (Void) -> T) -> T {
         lock()
         let value = block()
         unlock()
