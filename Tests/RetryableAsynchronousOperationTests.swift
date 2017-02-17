@@ -29,7 +29,7 @@ class RetryableAsynchronousOperationTests: XCTestCase {
      triggered.
      */
     class ManualOperation: RetryableAsynchronousOperation<Void, BaseRetryableOperationError> {
-        override func execute() { }
+        override func execute() throws { }
     }
     
     /// An operation which always repeat itself until reaching maximum attempts.
@@ -39,7 +39,7 @@ class RetryableAsynchronousOperationTests: XCTestCase {
             self.msToWait = msToWait
             super.init(maximumAttempts: maximumAttempts)
         }
-        override func execute() {
+        override func execute() throws {
             usleep(UInt32(self.msToWait * 1000))
             self.retry()
         }
@@ -55,7 +55,7 @@ class RetryableAsynchronousOperationTests: XCTestCase {
             self.constant = constant
             super.init(maximumAttempts: maximumAttempts)
         }
-        override func execute() { self.retry(dueTo: self.constant) }
+        override func execute() throws { self.retry(dueTo: self.constant) }
     }
     
     // MARK: - Test lifecycle

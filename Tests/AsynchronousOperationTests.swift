@@ -31,13 +31,13 @@ class AsynchronousOperationTests: XCTestCase {
             self.constant = constant
             super.init()
         }
-        override func execute() { self.finish(self.constant) }
+        override func execute() throws { self.finish(self.constant) }
     }
     
     /// An operation which must be manually finished.
     class ManualOperation: AsynchronousOperation<Void, BaseOperationError> {
         fileprivate(set) var timesExecuted: Int = 0
-        override func execute() { self.timesExecuted += 1 }
+        override func execute() throws { self.timesExecuted += 1 }
     }
     
     /// An operation which will spawn a child operation.
@@ -48,10 +48,10 @@ class AsynchronousOperationTests: XCTestCase {
             self.queue = queue
             super.init()
         }
-        override func execute() {
+        override func execute() throws {
             print("\(self.queue)")
             self.queue?.addOperation(self.childOperation)
-            self.finish(forwarding: self.childOperation.promise)
+            self.finish(immediatelyForwarding: self.childOperation.promise)
         }
     }
     
@@ -72,7 +72,7 @@ class AsynchronousOperationTests: XCTestCase {
             self.constant = error
             super.init()
         }
-        override func execute() { self.finish(error: self.constant) }
+        override func execute() throws { throw self.constant }
     }
     
     /// An operation which fail with a constant `BaseOperationError`.
@@ -82,7 +82,7 @@ class AsynchronousOperationTests: XCTestCase {
             self.constant = error
             super.init()
         }
-        override func execute() { self.finish(error: self.constant) }
+        override func execute() throws { throw self.constant }
     }
     
     // MARK: - Test lifecycle

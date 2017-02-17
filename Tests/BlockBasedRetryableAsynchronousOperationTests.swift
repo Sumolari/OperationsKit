@@ -31,7 +31,7 @@ class BlockBasedRetryableAsynchronousOperationTests: XCTestCase {
         // Put setup code here.
         // This method is called before the invocation of each test method in
         // the class.
-        Nimble.AsyncDefaults.Timeout = 10
+        Nimble.AsyncDefaults.Timeout = 60
     }
     
     override func tearDown() {
@@ -788,8 +788,7 @@ class BlockBasedRetryableAsynchronousOperationTests: XCTestCase {
         
         let progress = Progress(totalUnitCount: totalUnitCount)
         
-        var reject: ((Swift.Error) -> Void)! = nil
-        let promise = Promise<Void>() { _, r in reject = r }
+        let (promise, _, reject) = Promise<Void>.pending()
         
         let op = BlockBasedRetryableAsynchronousOperation<
             Void, BaseRetryableOperationError
