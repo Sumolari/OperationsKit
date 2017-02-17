@@ -29,6 +29,8 @@ where ExecutionError: RetryableOperationError {
      - note: The block will be executed when the operation is executed by the
      operation queue it was enqueued in and not before.
      
+     - warning: If given `block` throws an error the operation won't be retried.
+     
      - note: Progress will be forwarded to this operation's progress.
      
      - parameter maximumAttempts: Maximum amount of times block will be run
@@ -90,7 +92,9 @@ where ExecutionError: RetryableOperationError {
     }
     
     open override func execute() throws {
-        self.finish(waitingAndForwarding: try self.block())
+        try self.block()
+            .then { self.finish($0) }
+            .catch { self.retry(dueTo: $0) }
     }
     
 }
