@@ -615,6 +615,45 @@ class AsynchronousOperationTests: XCTestCase {
     }
     
     /**
+     Tests that a simple cancelled asynchronous operation won't be allowed to
+     finish itself after cancellation.
+     */
+    func test__operation_cancelled_wont_allow_finishing() {
+        
+        let expectedError = BaseOperationError.Cancelled
+        
+        let op = ManualOperation()
+        
+        self.queue().addOperation(op)
+        
+        // Operation must be running, eventually.
+        expect(op.isExecuting).toEventually(beTrue())
+        
+        // We finish the operation manually.
+        op.cancel()
+        
+        // Operation must be cancelled, eventually.
+        expect(op.isCancelled).toEventually(beTrue())
+        
+        // We try to manually finish the operation.
+        op.finish()
+        
+        // Promise must resolve, eventually.
+        expect(op.promise.isResolved).toEventually(beTrue())
+        // Promise must not be fulfilled, ever.
+        expect(op.promise.isFulfilled).toNotEventually(beTrue())
+        // Promise must be rejected, eventually.
+        expect(op.promise.isRejected).toEventually(beTrue())
+        // Promise must be rejected with expected error.
+        expect(op.promise.error).toEventually(matchError(expectedError))
+        // Operation's result must be the expected error, too.
+        expect(op.result?.error).toEventually(matchError(expectedError))
+        // Operation enqueued status must be cancelled, eventually.
+        expect(op.status).toEventually(equal(OperationStatus.cancelled))
+        
+    }
+    
+    /**
      Tests that a simple asynchronous operation properly handle its children
      operations.
      */

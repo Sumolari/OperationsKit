@@ -103,6 +103,59 @@ class BlockBasedRetryableAsynchronousOperationTests: XCTestCase {
         
     }
     
+    /// Tests that when the block throws it's not retried.
+    func test__operation_promise_is_not_retried_when_throwing() {
+        
+        let expectedError = NSError(domain: "error", code: -1, userInfo: nil)
+        
+        let op = BlockBasedRetryableAsynchronousOperation<
+            Void, BaseRetryableOperationError
+        >(maximumAttempts: 3) { _ -> Promise<Void> in
+            throw expectedError
+        }
+        
+        self.queue().addOperation(op)
+        
+        // Operation must be finished, eventually.
+        expect(op.isFinished).toEventually(beTrue())
+        // Operation must not be retried, ever.
+        expect(op.attempts).toNotEventually(beGreaterThan(0))
+        // Operation's must be resolved, eventually.
+        expect(op.promise.isResolved).toEventually(beTrue())
+        // Operation's must not be fulfilled, ever.
+        expect(op.promise.isFulfilled).toNotEventually(beTrue())
+        
+        // Promise must be rejected with expected error...
+        // - Promise must be rejected with a `BaseOperationError` error...
+        expect(op.isFinished).toEventually(beTrue()) // Wait until finishes...
+        if let promiseError = op.promise.error as? BaseRetryableOperationError {
+            // - Error must be `unknown`...
+            switch promiseError {
+            case .unknown(let underlyingError):
+                // - Underlying error must match expected `NSError`...
+                expect(underlyingError).to(matchError(expectedError))
+            default:
+                XCTFail("Promise error must be `unknown`")
+            }
+        } else {
+            XCTFail("Promise error must be a `BaseRetryableOperationError` instance")
+        }
+        // Operation's result must be the expected error, too...
+        if let error = op.result?.error {
+            // - Error must be `unknown`...
+            switch error {
+            case .unknown(let underlyingError):
+                // - Underlying error must match expected `NSError`...
+                expect(underlyingError).to(matchError(expectedError))
+            default:
+                XCTFail("Result error must be `unknown`")
+            }
+        } else {
+            XCTFail("Result error must be a `BaseRetryableOperationError` instance")
+        }
+        
+    }
+    
     /// Tests that when the block fails it's retried.
     func test__operation_promise_is_retried_until_limit() {
         
@@ -486,6 +539,59 @@ class BlockBasedRetryableAsynchronousOperationTests: XCTestCase {
         expect(op.result?.value).toEventually(beVoid())
         // Counter must be 2 after execution.
         expect(counter).toEventually(equal(2))
+        
+    }
+    
+    /// Tests that when the block throws it's not retried.
+    func test__operation_pap_is_not_retried_when_throwing() {
+        
+        let expectedError = NSError(domain: "error", code: -1, userInfo: nil)
+        
+        let op = BlockBasedRetryableAsynchronousOperation<
+            Void, BaseRetryableOperationError
+        >(maximumAttempts: 3) { _ -> ProgressAndPromise<Void> in
+                throw expectedError
+        }
+        
+        self.queue().addOperation(op)
+        
+        // Operation must be finished, eventually.
+        expect(op.isFinished).toEventually(beTrue())
+        // Operation must not be retried, ever.
+        expect(op.attempts).toNotEventually(beGreaterThan(0))
+        // Operation's must be resolved, eventually.
+        expect(op.promise.isResolved).toEventually(beTrue())
+        // Operation's must not be fulfilled, ever.
+        expect(op.promise.isFulfilled).toNotEventually(beTrue())
+        
+        // Promise must be rejected with expected error...
+        // - Promise must be rejected with a `BaseOperationError` error...
+        expect(op.isFinished).toEventually(beTrue()) // Wait until finishes...
+        if let promiseError = op.promise.error as? BaseRetryableOperationError {
+            // - Error must be `unknown`...
+            switch promiseError {
+            case .unknown(let underlyingError):
+                // - Underlying error must match expected `NSError`...
+                expect(underlyingError).to(matchError(expectedError))
+            default:
+                XCTFail("Promise error must be `unknown`")
+            }
+        } else {
+            XCTFail("Promise error must be a `BaseRetryableOperationError` instance")
+        }
+        // Operation's result must be the expected error, too...
+        if let error = op.result?.error {
+            // - Error must be `unknown`...
+            switch error {
+            case .unknown(let underlyingError):
+                // - Underlying error must match expected `NSError`...
+                expect(underlyingError).to(matchError(expectedError))
+            default:
+                XCTFail("Result error must be `unknown`")
+            }
+        } else {
+            XCTFail("Result error must be a `BaseRetryableOperationError` instance")
+        }
         
     }
     

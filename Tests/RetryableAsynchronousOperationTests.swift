@@ -58,6 +58,25 @@ class RetryableAsynchronousOperationTests: XCTestCase {
         override func execute() throws { self.retry(dueTo: self.constant) }
     }
     
+    /**
+     An operation which will throw a specific error.
+     */
+    class ThrowingOperation: RetryableAsynchronousOperation<Void, BaseRetryableOperationError> {
+        fileprivate let constant: Swift.Error
+        fileprivate let afterAttempts: UInt64
+        init(constant: Swift.Error, afterAttempts: UInt64, maximumAttempts: UInt64) {
+            self.constant = constant
+            self.afterAttempts = afterAttempts
+            super.init(maximumAttempts: maximumAttempts)
+        }
+        override func execute() throws {
+            guard self.attempts >= self.afterAttempts else {
+                return self.retry(dueTo: self.constant)
+            }
+            throw self.constant
+        }
+    }
+    
     // MARK: - Test lifecycle
     
     override func setUp() {
@@ -171,6 +190,123 @@ class RetryableAsynchronousOperationTests: XCTestCase {
         expect(op.promise.error).to(matchError(errorExpected))
         // Operation result must be proper error, too.
         expect(op.result?.error).to(matchError(errorExpected))
+        
+    }
+    
+    func test__throwing_operation_is_not_retried() {
+        
+        let expectedError = NSError(domain: "expected", code: -1, userInfo: nil)
+        
+        let attempts: UInt64 = 3
+        let op = ThrowingOperation(
+            constant: expectedError,
+            afterAttempts: 0,
+            maximumAttempts: attempts
+        )
+        
+        let queue = self.queue()
+        queue.isSuspended = true
+        queue.addOperation(op)
+        
+        // Operation attempts must match expected value.
+        expect(op.attempts).to(equal(0))
+        // Operation must not be finished.
+        expect(op.isFinished).to(beFalse())
+        // Operation must be ready to be run.
+        expect(op.status).to(equal(OperationStatus.ready))
+        
+        queue.isSuspended = false
+        
+        // Operation attempts must match expected value, eventually.
+        expect(op.attempts).toEventually(equal(0))
+  
+        // Promise must be rejected with expected error...
+        // - Promise must be rejected with a `BaseOperationError` error...
+        expect(op.isFinished).toEventually(beTrue()) // Wait until finishes...
+        if let promiseError = op.promise.error as? BaseRetryableOperationError {
+            // - Error must be `unknown`...
+            switch promiseError {
+            case .unknown(let underlyingError):
+                // - Underlying error must match expected `NSError`...
+                expect(underlyingError).to(matchError(expectedError))
+            default:
+                XCTFail("Promise error must be `unknown`")
+            }
+        } else {
+            XCTFail("Promise error must be a `BaseRetryableOperationError` instance")
+        }
+        // Operation's result must be the expected error, too...
+        if let error = op.result?.error {
+            // - Error must be `unknown`...
+            switch error {
+            case .unknown(let underlyingError):
+                // - Underlying error must match expected `NSError`...
+                expect(underlyingError).to(matchError(expectedError))
+            default:
+                XCTFail("Result error must be `unknown`")
+            }
+        } else {
+            XCTFail("Result error must be a `BaseRetryableOperationError` instance")
+        }
+        
+    }
+    
+    func test__throwing_operation_is_retried_until_exception_thrown() {
+        
+        let expectedError = NSError(domain: "expected", code: -1, userInfo: nil)
+        
+        let attempts: UInt64 = 3
+        let op = ThrowingOperation(
+            constant: expectedError,
+            afterAttempts: 1,
+            maximumAttempts: attempts
+        )
+        
+        let queue = self.queue()
+        queue.isSuspended = true
+        queue.addOperation(op)
+        
+        
+        // Operation attempts must match expected value.
+        expect(op.attempts).to(equal(0))
+        // Operation must not be finished.
+        expect(op.isFinished).to(beFalse())
+        // Operation must be ready to be run.
+        expect(op.status).to(equal(OperationStatus.ready))
+        
+        queue.isSuspended = false
+        
+        // Operation attempts must match expected value, eventually.
+        expect(op.attempts).toEventually(equal(1))
+        
+        // Promise must be rejected with expected error...
+        // - Promise must be rejected with a `BaseOperationError` error...
+        expect(op.isFinished).toEventually(beTrue()) // Wait until finishes...
+        if let promiseError = op.promise.error as? BaseRetryableOperationError {
+            // - Error must be `unknown`...
+            switch promiseError {
+            case .unknown(let underlyingError):
+                // - Underlying error must match expected `NSError`...
+                expect(underlyingError).to(matchError(expectedError))
+            default:
+                XCTFail("Promise error must be `unknown`")
+            }
+        } else {
+            XCTFail("Promise error must be a `BaseRetryableOperationError` instance")
+        }
+        // Operation's result must be the expected error, too...
+        if let error = op.result?.error {
+            // - Error must be `unknown`...
+            switch error {
+            case .unknown(let underlyingError):
+                // - Underlying error must match expected `NSError`...
+                expect(underlyingError).to(matchError(expectedError))
+            default:
+                XCTFail("Result error must be `unknown`")
+            }
+        } else {
+            XCTFail("Result error must be a `BaseRetryableOperationError` instance")
+        }
         
     }
     
