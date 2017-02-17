@@ -52,7 +52,8 @@ public enum BaseRetryableOperationError: RetryableOperationError {
  that will retry the operation until it succeeds or a limit is reached.
  
  Your `execute()` method should call `retry(dueTo:)` method when a recoverable
- error is thrown.
+ error is thrown. If your `execute` method throws an error the operation will
+ finish immediately.
  */
 open class RetryableAsynchronousOperation<ReturnType, ExecutionError>:
 AsynchronousOperation<ReturnType, ExecutionError>
@@ -100,7 +101,7 @@ where ExecutionError: RetryableOperationError {
         do {
             try self.execute()
         } catch let error {
-            self.retry(dueTo: error)
+            self.finish(error: error)
         }
         
     }
