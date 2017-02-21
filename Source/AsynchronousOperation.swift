@@ -368,8 +368,14 @@ where ExecutionError: OperationError {
     open func finish(immediatelyForwarding promise: Promise<ReturnType>) {
         if self.moveToFinishing() {
             promise
-                .then { self._finish($0) }
-                .catch { self._finish(error: $0) }
+                .then { result -> Void in
+                    guard !self.isCancelled else { return }
+                    self._finish(result)
+                }
+                .catch { error in
+                    guard !self.isCancelled else { return }
+                    self._finish(error: error)
+                }
         }
     }
     
