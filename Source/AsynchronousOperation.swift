@@ -253,6 +253,7 @@ where ExecutionError: OperationError {
     }
     
     open override func cancel() {
+        guard !self.promise.isResolved else { return }
         super.cancel()
         self.isExecuting = false
         self.isFinished = true
