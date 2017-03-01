@@ -13,10 +13,31 @@ import enum Result.Result
 
 // MARK: - Protocols
 
+public protocol WrappableError: Swift.Error {
+    
+    /**
+     Wraps given error, returning an instance of this type if original error
+     was one or an `Unknown` error if it wasn't.
+     
+     - parameter error: Error to be wrapped.
+     
+     - returns: Proper instance of this type for given error.
+     */
+    static func wrap(_ error: Swift.Error) -> Self
+    
+    /**
+     Unwraps underlying error, returning a Swift error.
+     
+     - returns: Underlyting error unwrapped.
+     */
+    func unwrap() -> Swift.Error
+    
+}
+
 /**
  Common errors that may be throw by any kind of asynchronous operation.
  */
-public protocol OperationError: Swift.Error {
+public protocol OperationError: WrappableError {
     
     /// The operation was cancelled.
     static var Cancelled: Self { get }
@@ -29,16 +50,6 @@ public protocol OperationError: Swift.Error {
      - returns: Properly wrapped known error.
      */
     static func Unknown(_ error: Swift.Error) -> Self
-    
-    /**
-     Wraps given error, returning an instance of this type if original error
-     was one or an `Unknown` error if it wasn't.
-     
-     - parameter error: Error to be wrapped.
-     
-     - returns: Proper instance of this type for given error.
-     */
-    static func wrap(_ error: Swift.Error) -> Self
     
 }
 
@@ -68,6 +79,24 @@ public enum BaseOperationError: OperationError {
 
     case cancelled
     case unknown(Swift.Error)
+    
+    public func unwrap() -> Swift.Error {
+        
+        switch self {
+        case .unknown(let error):
+            
+            if let wrappableError = error as? WrappableError {
+                return wrappableError.unwrap()
+            } else {
+                return error
+            }
+            
+        default:
+            return self
+            
+        }
+        
+    }
     
 }
 

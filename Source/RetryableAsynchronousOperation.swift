@@ -45,6 +45,24 @@ public enum BaseRetryableOperationError: RetryableOperationError {
     case unknown(Swift.Error)
     case reachedRetryLimit
     
+    public func unwrap() -> Swift.Error {
+        
+        switch self {
+        case .unknown(let error):
+            
+            if let wrappableError = error as? WrappableError {
+                return wrappableError.unwrap()
+            } else {
+                return error
+            }
+            
+        default:
+            return self
+            
+        }
+        
+    }
+    
 }
 
 /**
