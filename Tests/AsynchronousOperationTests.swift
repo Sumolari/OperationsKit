@@ -60,6 +60,23 @@ class AsynchronousOperationTests: XCTestCase {
         static func Unknown(_ error: Swift.Error) -> FailedOperationError {
             return .unknown(error)
         }
+        public func unwrap() -> Swift.Error {
+            
+            switch self {
+            case .unknown(let error):
+                
+                if let wrappableError = error as? WrappableError {
+                    return wrappableError.unwrap()
+                } else {
+                    return error
+                }
+                
+            default:
+                return self
+                
+            }
+   
+        }
         case cancelled
         case unknown(Swift.Error)
         case expected
