@@ -47,12 +47,12 @@ where ExecutionError: OperationError {
                 progressAndPromise.progress.completedUnitCount
             
             self.progress.reactive.totalUnitCount <~ progressAndPromise.progress
-                .reactive.values(forKeyPath: "totalUnitCount")
+                .reactive.producer(forKeyPath: "totalUnitCount")
                 .map { $0 as? Int64 }
                 .skipNil()
             
             self.progress.reactive.completedUnitCount <~ progressAndPromise
-                .progress.reactive.values(forKeyPath: "completedUnitCount")
+                .progress.reactive.producer(forKeyPath: "completedUnitCount")
                 .map { $0 as? Int64 }
                 .skipNil()
             
