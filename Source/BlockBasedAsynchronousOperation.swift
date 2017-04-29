@@ -46,17 +46,22 @@ where ExecutionError: OperationError {
             self.progress.completedUnitCount =
                 progressAndPromise.progress.completedUnitCount
             
-            self.progress.reactive.totalUnitCount <~ progressAndPromise.progress
-                .reactive.producer(forKeyPath: "totalUnitCount")
+            self.progress.reactive.totalUnitCount <~ progressAndPromise
+                .progress.reactive.producer(
+                    forKeyPath: #keyPath(Progress.totalUnitCount)
+                )
                 .map { $0 as? Int64 }
                 .skipNil()
             
             self.progress.reactive.completedUnitCount <~ progressAndPromise
-                .progress.reactive.producer(forKeyPath: "completedUnitCount")
+                .progress.reactive.producer(
+                    forKeyPath: #keyPath(Progress.completedUnitCount)
+                )
                 .map { $0 as? Int64 }
                 .skipNil()
             
             return progressAndPromise.promise
+
         }
     }
     
