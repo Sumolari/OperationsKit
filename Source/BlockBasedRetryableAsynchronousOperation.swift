@@ -79,21 +79,18 @@ where ExecutionError: RetryableOperationError {
      
      - parameter maximumAttempts: Maximum amount of times block will be run
      until giving up.
-     - parameter optionalProgress: Optional progress tracking the block. If
+     - parameter progress: Optional progress tracking the block. If
      `nil` operation's progress will remain the default one: a stalled progress
      with a total count of 0 units.
      - parameter block: Block returning a promise.
      */
     public init(
         maximumAttempts: UInt64 = 1,
-        progress optionalProgress: Progress? = nil,
+        progress: Progress? = nil,
         block: @escaping (Void) throws -> Promise<ReturnType>
     ) {
-        super.init(maximumAttempts: maximumAttempts)
         self.block = block
-        if let progress = optionalProgress {
-            self.progress = progress
-        }
+        super.init(maximumAttempts: maximumAttempts, progress: progress)
     }
     
     open override func execute() throws {

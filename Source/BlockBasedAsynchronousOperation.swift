@@ -72,20 +72,18 @@ where ExecutionError: OperationError {
      - note: The block will be executed when the operation is executed by the
      operation queue it was enqueued in and not before.
      
-     - parameter optionalProgress: Optional progress tracking the block. If 
-     `nil` operation's progress will remain the default one: a stalled progress
-     with a total count of 0 units.
-     - parameter block: Block returning a promise.
+     - parameters:
+       - progress: Optional progress tracking the block. If `nil` operation's 
+         progress will remain the default one: a stalled progress with a total 
+         count of 0 units.
+       - block: Block returning a promise.
      */
     public init(
-        progress optionalProgress: Progress? = nil,
+        progress: Progress? = nil,
         block: @escaping (Void) throws -> Promise<ReturnType>
     ) {
-        super.init()
         self.block = block
-        if let progress = optionalProgress {
-            self.progress = progress
-        }
+        super.init(progress: progress)
     }
     
     open override func execute() throws {

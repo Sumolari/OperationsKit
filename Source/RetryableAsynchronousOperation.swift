@@ -83,9 +83,24 @@ where ExecutionError: RetryableOperationError {
     /// Current amount of times the operation has been repeated.
     open private(set) var attempts: UInt64 = 0
     
-    public init(maximumAttempts: UInt64 = 1) {
+    /**
+     Creates a new operation which will be attempted up to given limit and
+     whose progress will be tracked by given one.
+     
+     - parameters:
+       - maximumAttempts: Maximum amount of times this operation will be
+         repeated (when failing) before considering it will never succeed and
+         stop repeating it.
+       - progress: Progress tracking this operation's progress. If
+         `nil` operation's progress will remain the default one: a stalled 
+         progress with a total count of 0 units.
+     */
+    public init(
+        maximumAttempts: UInt64 = 1,
+        progress: Progress? = nil
+    ) {
         self.maximumAttempts = maximumAttempts
-        super.init()
+        super.init(progress: progress)
     }
     
     /**

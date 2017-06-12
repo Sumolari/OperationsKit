@@ -135,17 +135,17 @@ where ExecutionError: OperationError {
     // MARK: Attributes
     
     /// Progress of this operation.
-    open internal(set) var progress = Progress(totalUnitCount: 0)
+    open let progress: Progress
     
     /// Promise wrapping underlying promise returned by block.
-    open fileprivate(set) var promise: Promise<ReturnType>! = nil
+    open let promise: Promise<ReturnType>
     
     /// Block to `fulfill` public promise.
-    fileprivate var fulfillPromise: ((ReturnType) -> Void)! = nil
+    fileprivate let fulfillPromise: ((ReturnType) -> Void)
     
     /// Block to `reject` public promise, used when cancelling the operation or
     /// forwarding underlying promise errors.
-    fileprivate var rejectPromise: ((Error) -> Void)! = nil
+    fileprivate let rejectPromise: ((Error) -> Void)
     
     /// Lock used to prevent race conditions when changing internal state
     /// (`isExecuting`, `isFinished`).
@@ -248,24 +248,21 @@ where ExecutionError: OperationError {
     
     // MARK: Constructors
     
-    public override init() {
+    /**
+     Creates a new operation whose progress will be tracked by given progress.
+     
+     - parameter progress: Progress tracking new operation's progress. If
+     `nil` operation's progress will remain the default one: a stalled progress
+     with a total count of 0 units.
+     */
+    public init(progress: Progress? = nil) {
+        (
+            self.promise,
+            self.fulfillPromise,
+            self.rejectPromise
+        ) = Promise<ReturnType>.pending()
+        self.progress = progress ?? Progress(totalUnitCount: 0)
         super.init()
-        self.promise = Promise<ReturnType>() {
-            [unowned self] fullfill, reject in
-            self.fulfillPromise = fullfill
-            self.rejectPromise = reject
-        }
-    }
-    
-    /// Initializes this operation with given progress.
-    public init(progress: Progress) {
-        super.init()
-        self.progress = progress
-        self.promise = Promise<ReturnType>() {
-            [unowned self] fullfill, reject in
-            self.fulfillPromise = fullfill
-            self.rejectPromise = reject
-        }
     }
     
     // MARK: Status-change methods
