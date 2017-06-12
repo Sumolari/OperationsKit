@@ -11,7 +11,7 @@ env:
   - LANG=en_US.UTF-8
   - WORKSPACE=Tests.xcworkspace
   - IOS_SCHEME="iOS Tests"
-  - IOS_SDK=iphonesimulator10.2
+  - IOS_SDK=iphonesimulator10.3
   - OSX_SCHEME="macOS Tests"
   - OSX_SDK=macosx10.12
   matrix:
