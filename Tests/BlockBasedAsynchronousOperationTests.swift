@@ -124,7 +124,7 @@ class BlockBasedAsynchronousOperationTests: XCTestCase {
         
         var flag: Bool = false
         
-        let block: (Void) -> Promise<Void> = {
+        let block: () -> Promise<Void> = {
             flag = true
             return Promise<Void>(value: ())
         }
@@ -162,7 +162,7 @@ class BlockBasedAsynchronousOperationTests: XCTestCase {
         
         var flag: Bool = false
         
-        let block: (Void) -> Promise<Void> = { _ in
+        let block: () -> Promise<Void> = { _ in
             flag = true
             return Promise<Void>(value: ())
         }
@@ -201,7 +201,7 @@ class BlockBasedAsynchronousOperationTests: XCTestCase {
         
         let progress = Progress(totalUnitCount: totalUnitCount)
         
-        var fulfill: ((Void) -> Void)! = nil
+        var fulfill: (() -> Void)! = nil
         let promise = Promise<Void>() { f, _ in fulfill = f }
         
         let op = BlockBasedAsynchronousOperation<Void, BaseOperationError>(
@@ -241,7 +241,7 @@ class BlockBasedAsynchronousOperationTests: XCTestCase {
         
         let progress = Progress(totalUnitCount: totalUnitCount)
         
-        var fulfill: ((Void) -> Void)! = nil
+        var fulfill: (() -> Void)! = nil
         let promise = Promise<Void>() { f, _ in fulfill = f }
         
         let op = BlockBasedAsynchronousOperation<Void, BaseOperationError>(
@@ -380,7 +380,7 @@ class BlockBasedAsynchronousOperationTests: XCTestCase {
     /// Tests that when the block succeeds the operation succeeds, too.
     func test__operation_pap_success() {
         
-        let block: (Void) -> ProgressAndPromise<Void> = {
+        let block: () -> ProgressAndPromise<Void> = {
             let progress = Progress(totalUnitCount: 1)
             let promise = Promise<Void>(value: ())
             return ProgressAndPromise(progress: progress, promise: promise)
@@ -412,7 +412,7 @@ class BlockBasedAsynchronousOperationTests: XCTestCase {
         
         let expectedError = NSError(domain: "error", code: -1, userInfo: nil)
         
-        let block: (Void) -> ProgressAndPromise<Void> = {
+        let block: () -> ProgressAndPromise<Void> = {
             let progress = Progress(totalUnitCount: 1)
             let promise = Promise<Void>(error: expectedError)
             return ProgressAndPromise(progress: progress, promise: promise)
@@ -470,7 +470,7 @@ class BlockBasedAsynchronousOperationTests: XCTestCase {
         
         var flag: Bool = false
         
-        let block: (Void) -> ProgressAndPromise<Void> = {
+        let block: () -> ProgressAndPromise<Void> = {
             flag = true
             let progress = Progress(totalUnitCount: 1)
             let promise = Promise<Void>(value: ())
@@ -510,7 +510,7 @@ class BlockBasedAsynchronousOperationTests: XCTestCase {
         
         var flag: Bool = false
         
-        let block: (Void) -> ProgressAndPromise<Void> = { _ in
+        let block: () -> ProgressAndPromise<Void> = { _ in
             flag = true
             let progress = Progress(totalUnitCount: 1)
             let promise = Promise<Void>(value: ())
@@ -551,7 +551,7 @@ class BlockBasedAsynchronousOperationTests: XCTestCase {
         
         let progress = Progress(totalUnitCount: totalUnitCount)
         
-        var fulfill: ((Void) -> Void)! = nil
+        var fulfill: (() -> Void)! = nil
         let promise = Promise<Void>() { f, _ in fulfill = f }
         
         let op = BlockBasedAsynchronousOperation<Void, BaseOperationError>() {
@@ -595,7 +595,7 @@ class BlockBasedAsynchronousOperationTests: XCTestCase {
         
         let progress = Progress(totalUnitCount: totalUnitCount)
         
-        var fulfill: ((Void) -> Void)! = nil
+        var fulfill: (() -> Void)! = nil
         let promise = Promise<Void>() { f, _ in fulfill = f }
         
         let op = BlockBasedAsynchronousOperation<Void, BaseOperationError>() {
@@ -662,7 +662,9 @@ class BlockBasedAsynchronousOperationTests: XCTestCase {
         
         for expectedProgress in 0..<(totalUnitCount - 2) {
             // Operation's progress total unit count must be expected one.
-            expect(op.progress.totalUnitCount).to(equal(totalUnitCount))
+            expect(op.progress.totalUnitCount).toEventually(
+                equal(totalUnitCount)
+            )
             // Forwarding progress may take a little bit so we must wait for it.
             // Operation's progress completed unit count must be expected one.
             expect(op.progress.completedUnitCount).toEventually(

@@ -80,8 +80,23 @@ where ExecutionError: RetryableOperationError {
     /// Maximum amount of times the operation will be retried before giving up.
     open private(set) var maximumAttempts: UInt64
     
+    /// Internal, thread-unsafe, attempts.
+    fileprivate var _attempts: UInt64 = 0
+    
+    /// Lock used to prevent race conditions when changing internal attempts.
+    fileprivate let attemptsLock = NSLock()
+    
     /// Current amount of times the operation has been repeated.
-    open private(set) var attempts: UInt64 = 0
+    open private(set) var attempts: UInt64 {
+        get {
+            return self.attemptsLock.withCriticalScope { self._attempts }
+        }
+        set {
+            self.attemptsLock.withCriticalScope {
+                self._attempts = newValue
+            }
+        }
+    }
     
     /**
      Creates a new operation which will be attempted up to given limit and

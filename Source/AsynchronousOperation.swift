@@ -9,6 +9,7 @@
 import Foundation
 import PromiseKit
 import ReactiveCocoa
+import ReactiveSwift
 import enum Result.Result
 
 // MARK: - Protocols
@@ -134,6 +135,11 @@ where ExecutionError: OperationError {
     
     // MARK: Attributes
     
+    /// Reactive lifetime.
+    open let lifetime: ReactiveSwift.Lifetime
+    /// Reactive lifetime token.
+    open let lifetimeToken: ReactiveSwift.Lifetime.Token
+    
     /// Progress of this operation.
     open let progress: Progress
     
@@ -155,11 +161,41 @@ where ExecutionError: OperationError {
     /// or when there's an error.
     open fileprivate(set) var result: Result<ReturnType, ExecutionError>? = nil
     
-    /// Date when this operation started.
-    open fileprivate(set) var startDate: Date? = nil
+    /// Internal, thread-unsafe, start date.
+    fileprivate var _startDate: Date? = nil
     
-    /// Date when this operation ended.
-    open fileprivate(set) var endDate: Date? = nil
+    /// Lock used to prevent race conditions when changing internal start date.
+    fileprivate let startDateLock = NSLock()
+    
+    /// Date when this operation started. Thread-safe.
+    open fileprivate(set) var startDate: Date? {
+        get {
+            return self.startDateLock.withCriticalScope { self._startDate }
+        }
+        set {
+            self.startDateLock.withCriticalScope {
+                self._startDate = newValue
+            }
+        }
+    }
+    
+    /// Internal, thread-unsafe, end date.
+    fileprivate var _endDate: Date? = nil
+    
+    /// Lock used to prevent race conditions when changing internal end date.
+    fileprivate let endDateLock = NSLock()
+    
+    /// Date when this operation ended. Thread-safe.
+    open fileprivate(set) var endDate: Date? {
+        get {
+            return self.endDateLock.withCriticalScope { self._endDate }
+        }
+        set {
+            self.endDateLock.withCriticalScope {
+                self._endDate = newValue
+            }
+        }
+    }
     
     /// Time interval ellapsed to complete this operation.
     open var executionDuration: TimeInterval? {
@@ -256,13 +292,19 @@ where ExecutionError: OperationError {
      with a total count of 0 units.
      */
     public init(progress: Progress? = nil) {
+        
         (
             self.promise,
             self.fulfillPromise,
             self.rejectPromise
         ) = Promise<ReturnType>.pending()
+        
         self.progress = progress ?? Progress(totalUnitCount: 0)
+        
+        (self.lifetime, self.lifetimeToken) = ReactiveSwift.Lifetime.make()
+        
         super.init()
+        
     }
     
     // MARK: Status-change methods

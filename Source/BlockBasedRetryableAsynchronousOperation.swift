@@ -22,6 +22,10 @@ where ExecutionError: RetryableOperationError {
     /// Block that will be run when this operation is started.
     internal var block: ((Void) throws -> Promise<ReturnType>)! = nil
     
+    /// Progress returned by a progress-and-promise tuple, to hold a strong
+    /// reference to it and prevent it from being deallocated too soon.
+    fileprivate var progressAndPromiseProgress: Progress? = nil
+    
     /**
      Initializes this asynchronous operation with a block which will return a
      tuple with a progress and a promise.
@@ -48,20 +52,27 @@ where ExecutionError: RetryableOperationError {
             
             self.progress.totalUnitCount =
                 progressAndPromise.progress.totalUnitCount
+            
             self.progress.completedUnitCount =
                 progressAndPromise.progress.completedUnitCount
             
+            self.progressAndPromiseProgress = progressAndPromise.progress
+            
             self.progress.reactive.totalUnitCount <~ progressAndPromise
-                .progress.reactive.producer(
+                .progress.reactive.values(
                     forKeyPath: #keyPath(Progress.totalUnitCount)
                 )
+                .logEvents()
+                .take(during: self.lifetime)
                 .map { $0 as? Int64 }
                 .skipNil()
             
             self.progress.reactive.completedUnitCount <~ progressAndPromise
-                .progress.reactive.producer(
+                .progress.reactive.values(
                     forKeyPath: #keyPath(Progress.completedUnitCount)
                 )
+                .logEvents()
+                .take(during: self.lifetime)
                 .map { $0 as? Int64 }
                 .skipNil()
             

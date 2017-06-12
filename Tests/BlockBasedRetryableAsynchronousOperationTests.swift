@@ -216,7 +216,7 @@ class BlockBasedRetryableAsynchronousOperationTests: XCTestCase {
         
         var flag: Bool = false
         
-        let block: (Void) -> Promise<Void> = {
+        let block: () -> Promise<Void> = {
             flag = true
             return Promise<Void>(value: ())
         }
@@ -256,7 +256,7 @@ class BlockBasedRetryableAsynchronousOperationTests: XCTestCase {
         
         var flag: Bool = false
         
-        let block: (Void) -> Promise<Void> = { _ in
+        let block: () -> Promise<Void> = { _ in
             flag = true
             return Promise<Void>(value: ())
         }
@@ -295,7 +295,7 @@ class BlockBasedRetryableAsynchronousOperationTests: XCTestCase {
         
         let progress = Progress(totalUnitCount: totalUnitCount)
         
-        var fulfill: ((Void) -> Void)! = nil
+        var fulfill: (() -> Void)! = nil
         let promise = Promise<Void>() { f, _ in fulfill = f }
         
         let op = BlockBasedRetryableAsynchronousOperation<
@@ -335,7 +335,7 @@ class BlockBasedRetryableAsynchronousOperationTests: XCTestCase {
         
         let progress = Progress(totalUnitCount: totalUnitCount)
         
-        var fulfill: ((Void) -> Void)! = nil
+        var fulfill: (() -> Void)! = nil
         let promise = Promise<Void>() { f, _ in fulfill = f }
         
         let op = BlockBasedRetryableAsynchronousOperation<
@@ -474,7 +474,7 @@ class BlockBasedRetryableAsynchronousOperationTests: XCTestCase {
     /// Tests that when the block succeeds the operation succeeds, too.
     func test__operation_pap_success() {
         
-        let block: (Void) -> ProgressAndPromise<Void> = {
+        let block: () -> ProgressAndPromise<Void> = {
             let progress = Progress(totalUnitCount: 1)
             let promise = Promise<Void>(value: ())
             return ProgressAndPromise(progress: progress, promise: promise)
@@ -657,7 +657,7 @@ class BlockBasedRetryableAsynchronousOperationTests: XCTestCase {
         
         var flag: Bool = false
         
-        let block: (Void) -> ProgressAndPromise<Void> = {
+        let block: () -> ProgressAndPromise<Void> = {
             flag = true
             let progress = Progress(totalUnitCount: 1)
             let promise = Promise<Void>(value: ())
@@ -697,7 +697,7 @@ class BlockBasedRetryableAsynchronousOperationTests: XCTestCase {
         
         var flag: Bool = false
         
-        let block: (Void) -> ProgressAndPromise<Void> = { _ in
+        let block: () -> ProgressAndPromise<Void> = { _ in
             flag = true
             let progress = Progress(totalUnitCount: 1)
             let promise = Promise<Void>(value: ())
@@ -738,7 +738,7 @@ class BlockBasedRetryableAsynchronousOperationTests: XCTestCase {
         
         let progress = Progress(totalUnitCount: totalUnitCount)
         
-        var fulfill: ((Void) -> Void)! = nil
+        var fulfill: (() -> Void)! = nil
         let promise = Promise<Void>() { f, _ in fulfill = f }
         
         let op = BlockBasedRetryableAsynchronousOperation<
@@ -783,7 +783,7 @@ class BlockBasedRetryableAsynchronousOperationTests: XCTestCase {
         
         let progress = Progress(totalUnitCount: totalUnitCount)
         
-        var fulfill: ((Void) -> Void)! = nil
+        var fulfill: (() -> Void)! = nil
         let promise = Promise<Void>() { f, _ in fulfill = f }
         
         let op = BlockBasedRetryableAsynchronousOperation<

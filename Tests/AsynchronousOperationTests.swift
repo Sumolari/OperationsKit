@@ -49,7 +49,6 @@ class AsynchronousOperationTests: XCTestCase {
             super.init()
         }
         override func execute() throws {
-            print("\(self.queue)")
             self.queue?.addOperation(self.childOperation)
             self.finish(immediatelyForwarding: self.childOperation.promise)
         }
@@ -169,9 +168,9 @@ class AsynchronousOperationTests: XCTestCase {
         // The second operation enqueued status must be ready.
         expect(secondOp.status).to(equal(OperationStatus.ready))
         // The first operation enqueued must be executing.
-        expect(firstOp.isExecuting).to(beTrue())
+        expect(firstOp.isExecuting).toEventually(beTrue())
         // The first operation enqueued status must be executing.
-        expect(firstOp.status).to(equal(OperationStatus.executing))
+        expect(firstOp.status).toEventually(equal(OperationStatus.executing))
         // We finish the first operation.
         firstOp.finish()
         // The second operation enqueued must be executing, eventually.
@@ -442,6 +441,9 @@ class AsynchronousOperationTests: XCTestCase {
         // Progress' completed unit count must be 0.
         expect(op.progress.completedUnitCount).to(equal(0))
         
+        // Operation must be executing before we can cancel it.
+        expect(op.isExecuting).toEventually(beTrue())
+        
         // We finish the operation to be good citizens.
         op.cancel()
         
@@ -472,6 +474,9 @@ class AsynchronousOperationTests: XCTestCase {
         expect(op.progress.totalUnitCount).to(equal(totalUnitCount))
         // Progress' completed unit count must be 0.
         expect(op.progress.completedUnitCount).to(equal(0))
+        
+        // We must be running the operation before finishing it.
+        expect(op.isExecuting).toEventually(beTrue())
         
         // We finish the operation with an error.
         op.finish(error: NSError(domain: "error", code: -1, userInfo: nil))
