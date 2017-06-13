@@ -9,8 +9,6 @@
 /* Begin PBXBuildFile section */
 		05F82595854FB8D175D9C8C9 /* Pods_iOS_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = CC42E1CE67C12AB4F304A69E /* Pods_iOS_Tests.framework */; };
 		1305A1D41DFC261F00FF1C88 /* BlockBasedAsynchronousOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1305A1D21DFC261F00FF1C88 /* BlockBasedAsynchronousOperationTests.swift */; };
-		1305A1E31DFC62BD00FF1C88 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1305A1E21DFC62BD00FF1C88 /* Info.plist */; };
-		1305A1E51DFC62C600FF1C88 /* Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 1305A1E41DFC62C600FF1C88 /* Info.plist */; };
 		1305CAD11E505A7900263AEC /* AsynchronousOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1305CAD01E505A7900263AEC /* AsynchronousOperationTests.swift */; };
 		1305CAD31E507AD500263AEC /* RetryableAsynchronousOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13907C311E4E5505005B4583 /* RetryableAsynchronousOperationTests.swift */; };
 		1305CAD71E508B3A00263AEC /* BlockBasedAsynchronousOperationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1305A1D21DFC261F00FF1C88 /* BlockBasedAsynchronousOperationTests.swift */; };
@@ -188,7 +186,7 @@
 			isa = PBXProject;
 			attributes = {
 				LastSwiftUpdateCheck = 0810;
-				LastUpgradeCheck = 0810;
+				LastUpgradeCheck = 0900;
 				TargetAttributes = {
 					1305A1B51DFC22F400FF1C88 = {
 						CreatedOnToolsVersion = 8.1;
@@ -227,7 +225,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1305A1E51DFC62C600FF1C88 /* Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -235,7 +232,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1305A1E31DFC62BD00FF1C88 /* Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -367,12 +363,60 @@
 		1305A1AC1DFC22A200FF1C88 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				ONLY_ACTIVE_ARCH = YES;
 			};
 			name = Debug;
 		};
 		1305A1AD1DFC22A200FF1C88 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 			};
 			name = Release;
 		};
