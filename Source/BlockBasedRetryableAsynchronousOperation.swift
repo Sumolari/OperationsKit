@@ -62,7 +62,6 @@ where ExecutionError: RetryableOperationError {
                 .progress.reactive.values(
                     forKeyPath: #keyPath(Progress.totalUnitCount)
                 )
-                .logEvents()
                 .take(during: self.lifetime)
                 .map { $0 as? Int64 }
                 .skipNil()
@@ -71,7 +70,6 @@ where ExecutionError: RetryableOperationError {
                 .progress.reactive.values(
                     forKeyPath: #keyPath(Progress.completedUnitCount)
                 )
-                .logEvents()
                 .take(during: self.lifetime)
                 .map { $0 as? Int64 }
                 .skipNil()
