@@ -59,7 +59,7 @@ where ExecutionError: RetryableOperationError {
             self.progressAndPromiseProgress = progressAndPromise.progress
             
             self.progress.reactive.totalUnitCount <~ progressAndPromise
-                .progress.reactive.values(
+                .progress.reactive.producer(
                     forKeyPath: #keyPath(Progress.totalUnitCount)
                 )
                 .take(during: self.lifetime)
@@ -67,7 +67,7 @@ where ExecutionError: RetryableOperationError {
                 .skipNil()
             
             self.progress.reactive.completedUnitCount <~ progressAndPromise
-                .progress.reactive.values(
+                .progress.reactive.producer(
                     forKeyPath: #keyPath(Progress.completedUnitCount)
                 )
                 .take(during: self.lifetime)
