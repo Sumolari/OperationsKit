@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 
   s.name         = "OperationsKit"
-  s.version      = "0.3.0"
+  s.version      = "0.4.0"
   s.summary      = "Operation subclasses offering a promise-based interface."
 
   s.description  = <<-DESC
